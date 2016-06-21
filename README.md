@@ -1,6 +1,4 @@
-# xolhn
-
-[![Build Status](https://travis-ci.org/xolan/xolhn.svg?branch=master)](https://travis-ci.org/xolan/xolhn)
+# xolhn [![Build Status](https://travis-ci.org/xolan/xolhn.svg?branch=master)](https://travis-ci.org/xolan/xolhn)
 
 > XolHN
 
