@@ -1,5 +1,7 @@
 # xolhn
 
+[![Build Status](https://travis-ci.org/xolan/xolhn.svg?branch=master)](https://travis-ci.org/xolan/xolhn)
+
 > XolHN
 
 A Hacker News client written in Vue.js.
