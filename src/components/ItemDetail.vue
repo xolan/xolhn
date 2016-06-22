@@ -46,9 +46,9 @@
           </div>
         </div>
       </flexbox-item>
-      <flexbox-item v-show="itemData.type === 'story' && getText !== ''">
+      <flexbox-item v-if="itemData.type === 'story' && getText !== ''">
         <div class="item-story-text">
-          <vue-markdown>{{ getText }}</vue-markdown>
+          <vue-markdown>{{{ getText }}}</vue-markdown>
         </div>
       </flexbox-item>
       <flexbox-item v-if="debug">
@@ -215,7 +215,7 @@ export default ItemDetail;
     word-break: break-all;
   }
 
-  .item-text ul, .item-story-text ul {
+  .item-text ul, .item-story-text ul, .item-text ol, .item-story-text ol {
     margin: 0;
     padding: 0;
     padding-bottom: 1em;
@@ -224,6 +224,14 @@ export default ItemDetail;
   .item-text li, .item-story-text li {
     margin-left: 1.5em;
     padding: 0;
+  }
+
+  .item-text blockquote, .item-story-text blockquote {
+    font-style: italic;
+    padding: 10px;
+    border-left: 5px solid #70D8FF;
+    margin-top: 0.5em;
+    margin-bottom: 0.5em;
   }
 
   .item-story-text {
