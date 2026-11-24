@@ -3,6 +3,11 @@ name = "xolhn-desktop"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+
+[[bin]]
+name = "xolhn"
+path = "src/main.rs"
 
 [dependencies]
 dirs.workspace = true

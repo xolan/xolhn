@@ -622,7 +622,7 @@ mod tests {
                     id: cid,
                     parent_id: Some(root_id),
                     story_id: 1,
-                    author: Some(if cid % 5 == 0 { "pg" } else { "alice" }.to_string()),
+                    author: Some(if cid.is_multiple_of(5) { "pg" } else { "alice" }.to_string()),
                     text_html: format!(
                         "<p>Comment <b>{cid}</b> with <a href=\"https://example.com/{cid}\">link</a> &amp; <code>code()</code>.</p>"
                     ),

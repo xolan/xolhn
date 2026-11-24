@@ -6,12 +6,47 @@ android {
     namespace = "dev.xolhn.app"
     compileSdk = 34
 
+    val appVersionName = providers.gradleProperty("xolhnVersion")
+        .orNull
+        ?.trim()
+        ?.takeIf { it.isNotEmpty() }
+        ?: "1.0.0"
+    val semverParts = appVersionName
+        .substringBefore("-")
+        .substringBefore("+")
+        .split(".")
+    val appVersionCode = (semverParts.getOrNull(0)?.toIntOrNull() ?: 1) * 10000 +
+        (semverParts.getOrNull(1)?.toIntOrNull() ?: 0) * 100 +
+        (semverParts.getOrNull(2)?.toIntOrNull() ?: 0)
+
+    val releaseStorePath = System.getenv("ANDROID_KEYSTORE_PATH")?.takeIf { it.isNotBlank() }
+    val releaseStorePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD")?.takeIf { it.isNotBlank() }
+    val releaseKeyAlias = System.getenv("ANDROID_KEY_ALIAS")?.takeIf { it.isNotBlank() }
+    val releaseKeyPassword = System.getenv("ANDROID_KEY_PASSWORD")?.takeIf { it.isNotBlank() }
+    val hasReleaseSigning =
+        releaseStorePath != null &&
+            releaseStorePassword != null &&
+            releaseKeyAlias != null &&
+            releaseKeyPassword != null &&
+            file(releaseStorePath).exists()
+
+    signingConfigs {
+        if (hasReleaseSigning) {
+            create("release") {
+                storeFile = file(releaseStorePath!!)
+                storePassword = releaseStorePassword
+                keyAlias = releaseKeyAlias
+                keyPassword = releaseKeyPassword
+            }
+        }
+    }
+
     defaultConfig {
         applicationId = "dev.xolhn.app"
         minSdk = 26
         targetSdk = 34
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = appVersionCode
+        versionName = appVersionName
 
         val abiList = providers.gradleProperty("xolhnAbi")
             .orNull
@@ -31,6 +66,11 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = false
+            signingConfig = if (hasReleaseSigning) {
+                signingConfigs.getByName("release")
+            } else {
+                signingConfigs.getByName("debug")
+            }
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

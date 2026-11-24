@@ -1,0 +1,166 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  check:
+    name: Check release version
+    runs-on: ubuntu-22.04
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      should_release: ${{ steps.tag.outputs.should_release }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: Read workspace version
+        id: version
+        run: |
+          version="$(awk -F'"' '/^version =/{print $2; exit}' Cargo.toml)"
+          if [ -z "${version}" ]; then
+            echo "Could not read workspace version from Cargo.toml" >&2
+            exit 1
+          fi
+          echo "version=${version}" >> "${GITHUB_OUTPUT}"
+      - name: Check if tag already exists
+        id: tag
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          if git ls-remote --exit-code --tags origin "refs/tags/v${VERSION}" >/dev/null 2>&1; then
+            echo "Tag v${VERSION} already exists; skipping release."
+            echo "should_release=false" >> "${GITHUB_OUTPUT}"
+          else
+            echo "Tag v${VERSION} does not exist; proceeding with release."
+            echo "should_release=true" >> "${GITHUB_OUTPUT}"
+          fi
+
+  ci:
+    name: CI
+    needs: check
+    if: needs.check.outputs.should_release == 'true'
+    uses: ./.github/workflows/ci.yml
+
+  build-desktop:
+    name: Build (${{ matrix.target }})
+    needs: [check, ci]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install Linux system dependencies
+        if: matrix.os == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libfontconfig-dev \
+            libwayland-dev \
+            libxkbcommon-x11-dev \
+            libx11-xcb-dev
+      - uses: jdx/mise-action@v5
+        with:
+          install_args: rust
+      - uses: Swatinem/rust-cache@v2
+      - name: Package desktop archive
+        env:
+          XOLHN_VERSION: ${{ needs.check.outputs.version }}
+          TARGET: ${{ matrix.target }}
+        run: mise run package "${TARGET}"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: dist-${{ matrix.target }}
+          path: dist/*
+
+  build-android:
+    name: Build (android-arm64-v8a)
+    needs: [check, ci]
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: jdx/mise-action@v5
+        with:
+          install_args: rust java android-sdk cargo:cargo-ndk
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: android
+      - name: Cache Gradle packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('android/**/*.gradle*', 'android/gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: gradle-${{ runner.os }}-
+      - name: Install Android SDK components
+        run: mise run setup:android
+      - name: Decode Android release keystore
+        id: keystore
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -n "${ANDROID_KEYSTORE_BASE64}" ] && \
+             [ -n "${ANDROID_KEYSTORE_PASSWORD}" ] && \
+             [ -n "${ANDROID_KEY_ALIAS}" ] && \
+             [ -n "${ANDROID_KEY_PASSWORD}" ]; then
+            keystore_path="${RUNNER_TEMP}/xolhn-release.keystore"
+            printf '%s' "${ANDROID_KEYSTORE_BASE64}" | tr -d '[:space:]' | base64 --decode > "${keystore_path}"
+            echo "path=${keystore_path}" >> "${GITHUB_OUTPUT}"
+          else
+            echo "Android signing secrets not configured; falling back to debug signing."
+          fi
+      - name: Package Android APK
+        env:
+          XOLHN_VERSION: ${{ needs.check.outputs.version }}
+          ANDROID_KEYSTORE_PATH: ${{ steps.keystore.outputs.path }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: mise run package:android
+      - name: Clean up decoded keystore
+        if: always() && steps.keystore.outputs.path != ''
+        env:
+          KEYSTORE_PATH: ${{ steps.keystore.outputs.path }}
+        run: rm -f "${KEYSTORE_PATH}"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: dist-android-arm64-v8a
+          path: dist/*
+
+  release:
+    name: Create GitHub Release
+    needs: [check, build-desktop, build-android]
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Verify checksums and publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.check.outputs.version }}
+          TARGET_SHA: ${{ github.sha }}
+        run: |
+          (cd dist && sha256sum -c ./*.sha256)
+          gh release create "v${VERSION}" dist/* \
+            --target "${TARGET_SHA}" \
+            --title "v${VERSION}" \
+            --generate-notes

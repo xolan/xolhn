@@ -51,14 +51,31 @@ mise run doctor
 | `mise run setup:emulator` | Install Android Emulator, API 34 system image, and create default AVD |
 | `mise run doctor` | Verify desktop & Android toolchains (`rustc`, `java`, `cargo-ndk`, NDK, `adb`, emulator/AVDs) |
 | `mise run check` | Type-check desktop + Android targets and run `xolhn-core` tests |
-| `mise run lint` | Run `rustfmt --check` and `clippy` |
+| `mise run fmt` | Format all Rust crates with `rustfmt` |
+| `mise run lint` | Run `rustfmt --check`, `clippy --all-targets`, and `actionlint` |
+| `mise run test` | Run workspace unit tests |
+| `mise run ci` | Run desktop CI checks (`lint` and `test`) |
+| `mise run ci:android` | Run Android NDK `clippy` (`arm64-v8a`, `x86_64`) and debug APK build |
 | `mise run dev:desktop` | Run the Windows/Linux desktop app |
 | `mise run dev:android` | Build, install, and launch XolHN on an Android emulator (auto-boots AVD) |
 | `mise run build:desktop` | Build the release desktop binary |
 | `mise run build:android` | Compile `xolhn-android` (`arm64-v8a`) and assemble debug APK |
 | `mise run build:android-release` | Build release Android APK |
+| `mise run package <target>` | Package a release archive (`tar.gz`/`zip`) and `.sha256` into `dist/` |
+| `mise run package:android` | Package release `arm64-v8a` APK and `.sha256` into `dist/` |
 | `mise run install:android` | Build and install debug APK via `adb` |
 | `mise run logs:android` | Stream `xolhn` Android logcat output |
+
+### CI & Releases
+
+GitHub Actions workflows live in [.github/workflows/ci.yml](.github/workflows/ci.yml) (Linux, Windows, Android) and [.github/workflows/release.yml](.github/workflows/release.yml) (auto-releases `v<version>` on `main` when the workspace version in [Cargo.toml](Cargo.toml) has no matching git tag yet).
+
+For production Android release signing, configure these repository secrets (`Settings -> Secrets and variables -> Actions`); when unset, release builds fall back to debug keystore signing:
+
+- `ANDROID_KEYSTORE_BASE64`
+- `ANDROID_KEYSTORE_PASSWORD`
+- `ANDROID_KEY_ALIAS`
+- `ANDROID_KEY_PASSWORD`
 
 ## Project Documents
 

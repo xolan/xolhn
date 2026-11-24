@@ -1,0 +1,69 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_call:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  linux:
+    name: Linux
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libfontconfig-dev \
+            libwayland-dev \
+            libxkbcommon-x11-dev \
+            libx11-xcb-dev
+      - uses: jdx/mise-action@v5
+        with:
+          install_args: rust actionlint shellcheck
+      - uses: Swatinem/rust-cache@v2
+      - run: mise run ci
+
+  windows:
+    name: Windows
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: jdx/mise-action@v5
+        with:
+          install_args: rust actionlint shellcheck
+      - uses: Swatinem/rust-cache@v2
+      - run: mise run ci
+
+  android:
+    name: Android
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: jdx/mise-action@v5
+        with:
+          install_args: rust java android-sdk cargo:cargo-ndk
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: android
+      - name: Cache Gradle packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('android/**/*.gradle*', 'android/gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: gradle-${{ runner.os }}-
+      - name: Install Android SDK components
+        run: mise run setup:android
+      - name: Run Android CI checks
+        run: mise run ci:android

@@ -16,3 +16,6 @@ android/local.properties
 .idea/
 .vscode/
 .DS_Store
+
+# Release artifacts
+/dist
