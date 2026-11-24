@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="gpui_surface">#FF181A20</color>
+    <color name="xolhn_accent">#FFFF6B1A</color>
+    <color name="xolhn_bg">#FF111216</color>
+</resources>

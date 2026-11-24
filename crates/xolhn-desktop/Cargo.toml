@@ -1,0 +1,15 @@
+[package]
+name = "xolhn-desktop"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+dirs.workspace = true
+env_logger = "0.11"
+gpui = { workspace = true }
+gpui-kit = { workspace = true, features = ["component", "assets"] }
+gpui_platform = { workspace = true }
+log.workspace = true
+xolhn-core = { path = "../xolhn-core" }
+xolhn-ui = { path = "../xolhn-ui" }

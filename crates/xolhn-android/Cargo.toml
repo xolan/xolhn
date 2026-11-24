@@ -1,0 +1,21 @@
+[package]
+name = "xolhn-android"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lib]
+name = "xolhn_android"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+gpui = { workspace = true }
+gpui-kit = { workspace = true, features = ["component", "assets"] }
+log.workspace = true
+xolhn-core = { path = "../xolhn-core" }
+xolhn-ui = { path = "../xolhn-ui" }
+
+[target.'cfg(target_os = "android")'.dependencies]
+android-activity = { version = "0.6", features = ["native-activity"] }
+android_logger = "0.15"
+gpui-mobile = { workspace = true }

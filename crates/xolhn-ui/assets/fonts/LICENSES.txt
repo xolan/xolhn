@@ -1,0 +1,7 @@
+Bundled Font Licenses
+
+All fonts in this directory are licensed under the SIL Open Font License, Version 1.1 (OFL-1.1):
+- Atkinson Hyperlegible (Braille Institute of America)
+- Inter (Rasmus Andersson)
+- Literata (TypeTogether)
+- JetBrains Mono (JetBrains)

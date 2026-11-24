@@ -1,0 +1,2010 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>XolHN — Desktop & Mobile UI Mockups</title>
+<style>
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    font-family: var(--font-sans, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif);
+    color: var(--foreground, #e4e4e7);
+    line-height: 1.4;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .stage {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  /* Theme Switcher Bar (uses host T3 CSS variables) */
+  .theme-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 8px 10px;
+    background: var(--card, rgba(255, 255, 255, 0.04));
+    border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
+    border-radius: var(--radius, 8px);
+  }
+
+  .theme-bar-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--muted-foreground, #a1a1aa);
+    padding-left: 2px;
+  }
+
+  .theme-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .theme-pill {
+    appearance: none;
+    border: 1px solid var(--border, rgba(255, 255, 255, 0.14));
+    background: var(--secondary, rgba(255, 255, 255, 0.05));
+    color: var(--foreground, #e4e4e7);
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 500;
+    padding: 4px 8px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease, transform 0.1s ease;
+  }
+
+  .theme-pill:hover {
+    border-color: var(--ring, #ff6b1a);
+  }
+
+  .theme-pill.active {
+    background: var(--primary, #ff6b1a);
+    color: var(--primary-foreground, #ffffff);
+    border-color: var(--primary, #ff6b1a);
+    font-weight: 600;
+  }
+
+  .swatch-pair {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .swatch-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    border: 1px solid rgba(128, 128, 128, 0.35);
+    display: inline-block;
+  }
+
+  .swatch-dot + .swatch-dot {
+    margin-left: -3px;
+  }
+
+  /* Section Headings (uses host T3 CSS variables) */
+  .section-block {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .section-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .section-title {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: var(--foreground, #e4e4e7);
+  }
+
+  .section-meta {
+    font-size: 11px;
+    color: var(--muted-foreground, #a1a1aa);
+  }
+
+  /* =========================================================
+     XOLHN APP THEMES (Applied to .themed-root)
+     ========================================================= */
+  .themed-root[data-app-theme="xolhn-dark"] {
+    --app-bg: #111216;
+    --app-surface: #181a20;
+    --app-surface-2: #21242d;
+    --app-hover: #1e212a;
+    --app-border: #2a2e3a;
+    --app-text: #eceef2;
+    --app-muted: #98a0b2;
+    --app-subtle: #687082;
+    --app-accent: #ff6b1a;
+    --app-accent-fg: #ffffff;
+    --app-accent-soft: rgba(255, 107, 26, 0.14);
+    --app-link: #60a5fa;
+    --app-code-bg: #0c0d10;
+    --rail-1: #ff6b1a;
+    --rail-2: #60a5fa;
+    --rail-3: #34d399;
+    --rail-4: #c084fc;
+    --app-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+  }
+
+  .themed-root[data-app-theme="xolhn-light"] {
+    --app-bg: #f6f4f0;
+    --app-surface: #ffffff;
+    --app-surface-2: #efece6;
+    --app-hover: #f3f0ea;
+    --app-border: #e2ddd5;
+    --app-text: #1c1917;
+    --app-muted: #57534e;
+    --app-subtle: #857f78;
+    --app-accent: #e05300;
+    --app-accent-fg: #ffffff;
+    --app-accent-soft: rgba(224, 83, 0, 0.11);
+    --app-link: #1d4ed8;
+    --app-code-bg: #edeae3;
+    --rail-1: #e05300;
+    --rail-2: #2563eb;
+    --rail-3: #059669;
+    --rail-4: #7c3aed;
+    --app-shadow: 0 10px 28px rgba(28, 25, 23, 0.14);
+  }
+
+  .themed-root[data-app-theme="rose-pine"] {
+    --app-bg: #191724;
+    --app-surface: #1f1d2e;
+    --app-surface-2: #26233a;
+    --app-hover: #21202e;
+    --app-border: #403d52;
+    --app-text: #e0def4;
+    --app-muted: #908caa;
+    --app-subtle: #6e6a86;
+    --app-accent: #f6c177;
+    --app-accent-fg: #191724;
+    --app-accent-soft: rgba(246, 193, 119, 0.15);
+    --app-link: #9ccfd8;
+    --app-code-bg: #151320;
+    --rail-1: #eb6f92;
+    --rail-2: #f6c177;
+    --rail-3: #9ccfd8;
+    --rail-4: #c4a7e7;
+    --app-shadow: 0 12px 32px rgba(10, 8, 18, 0.5);
+  }
+
+  .themed-root[data-app-theme="catppuccin-mocha"] {
+    --app-bg: #1e1e2e;
+    --app-surface: #181825;
+    --app-surface-2: #313244;
+    --app-hover: #242438;
+    --app-border: #45475a;
+    --app-text: #cdd6f4;
+    --app-muted: #a6adc8;
+    --app-subtle: #6c7086;
+    --app-accent: #fab387;
+    --app-accent-fg: #11111b;
+    --app-accent-soft: rgba(250, 179, 135, 0.15);
+    --app-link: #89b4fa;
+    --app-code-bg: #11111b;
+    --rail-1: #fab387;
+    --rail-2: #89b4fa;
+    --rail-3: #a6e3a1;
+    --rail-4: #cba6f7;
+    --app-shadow: 0 12px 32px rgba(10, 10, 20, 0.48);
+  }
+
+  .themed-root[data-app-theme="catppuccin-latte"] {
+    --app-bg: #eff1f5;
+    --app-surface: #e6e9ef;
+    --app-surface-2: #dce0e8;
+    --app-hover: #e2e5ec;
+    --app-border: #ccd0da;
+    --app-text: #4c4f69;
+    --app-muted: #6c6f85;
+    --app-subtle: #9ca0b0;
+    --app-accent: #fe640b;
+    --app-accent-fg: #ffffff;
+    --app-accent-soft: rgba(254, 100, 11, 0.12);
+    --app-link: #1e66f5;
+    --app-code-bg: #e6e9ef;
+    --rail-1: #fe640b;
+    --rail-2: #1e66f5;
+    --rail-3: #40a02b;
+    --rail-4: #8839ef;
+    --app-shadow: 0 10px 28px rgba(76, 79, 105, 0.14);
+  }
+
+  .themed-root[data-app-theme="gruvbox-dark"] {
+    --app-bg: #282828;
+    --app-surface: #1d2021;
+    --app-surface-2: #3c3836;
+    --app-hover: #32302f;
+    --app-border: #504945;
+    --app-text: #ebdbb2;
+    --app-muted: #bdae93;
+    --app-subtle: #928374;
+    --app-accent: #fe8019;
+    --app-accent-fg: #1d2021;
+    --app-accent-soft: rgba(254, 128, 25, 0.16);
+    --app-link: #83a598;
+    --app-code-bg: #1d2021;
+    --rail-1: #fe8019;
+    --rail-2: #83a598;
+    --rail-3: #8ec07c;
+    --rail-4: #d3869b;
+    --app-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+  }
+
+  /* =========================================================
+     MOCKUP 1: DESKTOP APP WINDOW (WINDOWS / LINUX)
+     ========================================================= */
+  .desktop-window {
+    width: 100%;
+    background: var(--app-bg);
+    color: var(--app-text);
+    border: 1px solid var(--app-border);
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: var(--app-shadow);
+    position: relative;
+    transition: background-color 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+  }
+
+  .win-titlebar {
+    height: 34px;
+    background: var(--app-surface);
+    border-bottom: 1px solid var(--app-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 10px;
+    gap: 10px;
+  }
+
+  .win-brand {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    min-width: 96px;
+  }
+
+  .brand-mark {
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+    background: var(--app-accent);
+    color: var(--app-accent-fg);
+    font-size: 11px;
+    font-weight: 800;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    letter-spacing: -0.04em;
+    flex-shrink: 0;
+  }
+
+  .brand-name {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--app-text);
+    letter-spacing: -0.01em;
+  }
+
+  .win-search {
+    flex: 1;
+    max-width: 280px;
+    height: 22px;
+    background: var(--app-bg);
+    border: 1px solid var(--app-border);
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 7px;
+  }
+
+  .win-search input {
+    border: none;
+    background: transparent;
+    color: var(--app-text);
+    font-family: inherit;
+    font-size: 11px;
+    outline: none;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .win-search input::placeholder {
+    color: var(--app-subtle);
+  }
+
+  .kbd-hint {
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+    font-size: 9px;
+    color: var(--app-subtle);
+    background: var(--app-surface-2);
+    border: 1px solid var(--app-border);
+    border-radius: 3px;
+    padding: 1px 4px;
+    white-space: nowrap;
+  }
+
+  .win-controls {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 72px;
+    justify-content: flex-end;
+  }
+
+  .win-ctrl {
+    width: 20px;
+    height: 18px;
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--app-muted);
+  }
+
+  .desktop-body {
+    display: grid;
+    grid-template-columns: 44px 250px minmax(0, 1fr);
+    height: 444px;
+  }
+
+  /* Left Icon Rail */
+  .icon-rail {
+    background: var(--app-surface);
+    border-right: 1px solid var(--app-border);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 0;
+  }
+
+  .rail-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    width: 100%;
+  }
+
+  .rail-btn {
+    appearance: none;
+    border: none;
+    background: transparent;
+    color: var(--app-muted);
+    width: 34px;
+    height: 34px;
+    border-radius: 7px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1px;
+    cursor: pointer;
+    position: relative;
+    padding: 0;
+    font-family: inherit;
+    transition: background 0.14s ease, color 0.14s ease;
+  }
+
+  .rail-btn:hover {
+    background: var(--app-surface-2);
+    color: var(--app-text);
+  }
+
+  .rail-btn.active {
+    background: var(--app-accent-soft);
+    color: var(--app-accent);
+  }
+
+  .rail-btn.active::before {
+    content: "";
+    position: absolute;
+    left: -5px;
+    top: 7px;
+    bottom: 7px;
+    width: 3px;
+    border-radius: 0 3px 3px 0;
+    background: var(--app-accent);
+  }
+
+  .rail-lbl {
+    font-size: 8.5px;
+    font-weight: 600;
+    line-height: 1;
+  }
+
+  /* Middle Feed Pane */
+  .feed-pane {
+    background: var(--app-bg);
+    border-right: 1px solid var(--app-border);
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .pane-head {
+    height: 34px;
+    padding: 0 10px;
+    border-bottom: 1px solid var(--app-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  .pane-title {
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--app-text);
+  }
+
+  .pane-sub {
+    font-size: 10px;
+    color: var(--app-subtle);
+  }
+
+  .story-list {
+    overflow-y: auto;
+    flex: 1;
+    scrollbar-width: thin;
+    scrollbar-color: var(--app-border) transparent;
+  }
+
+  .story-row {
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--app-border);
+    cursor: pointer;
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    border-left: 2.5px solid transparent;
+    transition: background 0.12s ease;
+  }
+
+  .story-row:hover {
+    background: var(--app-hover);
+  }
+
+  .story-row.selected {
+    background: var(--app-surface-2);
+    border-left-color: var(--app-accent);
+  }
+
+  .story-rank {
+    font-family: var(--font-mono, ui-monospace, monospace);
+    font-size: 10px;
+    color: var(--app-subtle);
+    width: 14px;
+    flex-shrink: 0;
+    padding-top: 1px;
+  }
+
+  .story-row.selected .story-rank {
+    color: var(--app-accent);
+    font-weight: 700;
+  }
+
+  .story-main {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .story-title {
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--app-text);
+    line-height: 1.3;
+    margin-bottom: 3px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .story-meta-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    font-size: 10px;
+    color: var(--app-muted);
+  }
+
+  .story-domain {
+    color: var(--app-subtle);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .cmt-badge {
+    font-family: var(--font-mono, ui-monospace, monospace);
+    font-size: 9.5px;
+    font-weight: 600;
+    color: var(--app-accent);
+    background: var(--app-accent-soft);
+    padding: 1px 5px;
+    border-radius: 999px;
+    flex-shrink: 0;
+  }
+
+  /* Right Reader Pane */
+  .reader-pane {
+    background: var(--app-surface);
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+  }
+
+  .reader-scroll {
+    overflow-y: auto;
+    padding: 12px 14px;
+    flex: 1;
+    scrollbar-width: thin;
+    scrollbar-color: var(--app-border) transparent;
+  }
+
+  .reader-header {
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--app-border);
+    margin-bottom: 8px;
+  }
+
+  .reader-top-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 6px;
+  }
+
+  .reader-title {
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.3;
+    color: var(--app-text);
+    margin: 0;
+  }
+
+  .open-link-btn {
+    appearance: none;
+    border: none;
+    background: var(--app-accent);
+    color: var(--app-accent-fg);
+    font-family: inherit;
+    font-size: 10.5px;
+    font-weight: 700;
+    padding: 5px 9px;
+    border-radius: 6px;
+    cursor: pointer;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+
+  .open-link-btn:hover {
+    filter: brightness(1.06);
+  }
+
+  .reader-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    font-size: 10.5px;
+    color: var(--app-muted);
+  }
+
+  .domain-pill {
+    font-family: var(--font-mono, ui-monospace, monospace);
+    font-size: 10px;
+    color: var(--app-link);
+    background: var(--app-surface-2);
+    border: 1px solid var(--app-border);
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+
+  .reader-selftext {
+    margin-top: 8px;
+    padding: 8px 10px;
+    background: var(--app-bg);
+    border: 1px solid var(--app-border);
+    border-radius: 6px;
+    font-size: 11px;
+    color: var(--app-text);
+    line-height: 1.45;
+  }
+
+  .comments-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .comments-count {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--app-text);
+  }
+
+  .toolbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .mini-btn {
+    appearance: none;
+    border: 1px solid var(--app-border);
+    background: var(--app-bg);
+    color: var(--app-muted);
+    font-family: inherit;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .mini-btn:hover {
+    color: var(--app-text);
+    border-color: var(--app-accent);
+  }
+
+  /* Nested Comments */
+  .comment-node {
+    margin-top: 6px;
+  }
+
+  .comment-node.depth-1 { padding-left: 10px; border-left: 2px solid var(--rail-1); }
+  .comment-node.depth-2 { padding-left: 10px; border-left: 2px solid var(--rail-2); }
+  .comment-node.depth-3 { padding-left: 10px; border-left: 2px solid var(--rail-3); }
+  .comment-node.depth-4 { padding-left: 10px; border-left: 2px solid var(--rail-4); }
+
+  .comment-head {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 10.5px;
+    color: var(--app-muted);
+    cursor: pointer;
+    user-select: none;
+    padding: 2px 0;
+  }
+
+  .comment-head:hover .comment-author {
+    color: var(--app-accent);
+  }
+
+  .comment-author {
+    font-weight: 700;
+    color: var(--app-text);
+  }
+
+  .op-badge {
+    font-size: 8.5px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    padding: 1px 4px;
+    border-radius: 3px;
+    background: var(--app-accent-soft);
+    color: var(--app-accent);
+  }
+
+  .collapse-toggle {
+    font-family: var(--font-mono, ui-monospace, monospace);
+    font-size: 9.5px;
+    color: var(--app-subtle);
+    margin-left: auto;
+  }
+
+  .comment-body {
+    font-size: 11.5px;
+    line-height: 1.45;
+    color: var(--app-text);
+    margin-top: 2px;
+  }
+
+  .comment-body p {
+    margin: 0 0 5px;
+  }
+
+  .comment-body p:last-child {
+    margin-bottom: 0;
+  }
+
+  .comment-body code {
+    font-family: var(--font-mono, ui-monospace, monospace);
+    font-size: 10.5px;
+    background: var(--app-code-bg);
+    border: 1px solid var(--app-border);
+    padding: 0 4px;
+    border-radius: 3px;
+  }
+
+  .comment-body blockquote {
+    margin: 4px 0;
+    padding: 3px 8px;
+    border-left: 2px solid var(--app-subtle);
+    color: var(--app-muted);
+    font-style: italic;
+  }
+
+  .comment-body a {
+    color: var(--app-link);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 2px;
+  }
+
+  .comment-node.collapsed > .comment-body,
+  .comment-node.collapsed > .comment-children {
+    display: none;
+  }
+
+  .desktop-toast {
+    position: absolute;
+    bottom: 10px;
+    right: 12px;
+    background: var(--app-surface-2);
+    color: var(--app-text);
+    border: 1px solid var(--app-accent);
+    border-radius: 6px;
+    padding: 5px 9px;
+    font-size: 10.5px;
+    font-weight: 500;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(4px);
+    transition: opacity 0.16s ease, transform 0.16s ease;
+  }
+
+  .desktop-toast.show {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* =========================================================
+     MOCKUP 2: MOBILE VIEWS (ANDROID)
+     ========================================================= */
+  .mobile-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+    align-items: start;
+  }
+
+  .phone-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .phone-bezel {
+    width: 100%;
+    max-width: 346px;
+    height: 552px;
+    background: #0b0c0f;
+    border: 2px solid #2b2e38;
+    border-radius: 28px;
+    padding: 8px;
+    box-shadow: var(--app-shadow);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .phone-screen {
+    flex: 1;
+    background: var(--app-bg);
+    color: var(--app-text);
+    border-radius: 21px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    transition: background-color 0.18s ease, color 0.18s ease;
+  }
+
+  .android-status {
+    height: 24px;
+    padding: 0 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--app-muted);
+    background: var(--app-surface);
+    position: relative;
+    flex-shrink: 0;
+  }
+
+  .punch-hole {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #0b0c0f;
+    position: absolute;
+    left: 50%;
+    top: 7px;
+    transform: translateX(-50%);
+  }
+
+  .android-topbar {
+    height: 40px;
+    background: var(--app-surface);
+    border-bottom: 1px solid var(--app-border);
+    padding: 0 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  .android-top-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .android-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--app-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .android-top-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  .icon-btn-sm {
+    appearance: none;
+    border: none;
+    background: transparent;
+    color: var(--app-muted);
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 0;
+  }
+
+  .icon-btn-sm:hover {
+    background: var(--app-surface-2);
+    color: var(--app-text);
+  }
+
+  .chip-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 10px;
+    background: var(--app-surface);
+    border-bottom: 1px solid var(--app-border);
+    overflow-x: auto;
+    scrollbar-width: none;
+    flex-shrink: 0;
+  }
+
+  .chip-row::-webkit-scrollbar {
+    display: none;
+  }
+
+  .m-chip {
+    appearance: none;
+    border: 1px solid var(--app-border);
+    background: var(--app-bg);
+    color: var(--app-muted);
+    font-family: inherit;
+    font-size: 10.5px;
+    font-weight: 600;
+    padding: 3px 9px;
+    border-radius: 999px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .m-chip.active {
+    background: var(--app-accent);
+    color: var(--app-accent-fg);
+    border-color: var(--app-accent);
+  }
+
+  .m-scroll {
+    flex: 1;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--app-border) transparent;
+  }
+
+  .m-story-card {
+    padding: 9px 11px;
+    border-bottom: 1px solid var(--app-border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: background 0.12s ease;
+  }
+
+  .m-story-card.selected {
+    background: var(--app-surface-2);
+  }
+
+  .m-story-link-zone {
+    flex: 1;
+    min-width: 0;
+    cursor: pointer;
+  }
+
+  .m-story-title {
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.32;
+    color: var(--app-text);
+    margin-bottom: 3px;
+  }
+
+  .m-story-sub {
+    font-size: 10px;
+    color: var(--app-muted);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    flex-wrap: wrap;
+  }
+
+  .m-story-domain {
+    color: var(--app-link);
+    font-weight: 500;
+  }
+
+  .m-cmt-pill {
+    appearance: none;
+    border: 1px solid var(--app-border);
+    background: var(--app-surface);
+    color: var(--app-accent);
+    font-family: var(--font-mono, ui-monospace, monospace);
+    font-size: 10px;
+    font-weight: 700;
+    min-width: 44px;
+    height: 36px;
+    padding: 0 7px;
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .m-story-card.selected .m-cmt-pill {
+    background: var(--app-accent-soft);
+    border-color: var(--app-accent);
+  }
+
+  .android-nav {
+    height: 44px;
+    background: var(--app-surface);
+    border-top: 1px solid var(--app-border);
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  .nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    font-size: 9.5px;
+    font-weight: 600;
+    color: var(--app-muted);
+  }
+
+  .nav-item.active {
+    color: var(--app-accent);
+  }
+
+  .nav-pill {
+    padding: 2px 10px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .nav-item.active .nav-pill {
+    background: var(--app-accent-soft);
+  }
+
+  /* Android Thread Screen */
+  .m-thread-head {
+    padding: 10px 12px;
+    background: var(--app-surface);
+    border-bottom: 1px solid var(--app-border);
+  }
+
+  .m-thread-title {
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.32;
+    color: var(--app-text);
+    margin: 0 0 6px;
+  }
+
+  .m-link-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 5px 8px;
+    background: var(--app-bg);
+    border: 1px solid var(--app-border);
+    border-radius: 7px;
+    font-size: 10.5px;
+    color: var(--app-link);
+    font-family: var(--font-mono, ui-monospace, monospace);
+    margin-bottom: 6px;
+    cursor: pointer;
+  }
+
+  .m-thread-meta {
+    font-size: 10px;
+    color: var(--app-muted);
+  }
+
+  .m-comments-wrap {
+    padding: 6px 11px 52px;
+  }
+
+  .m-comments-wrap .comment-body {
+    font-size: 12px;
+    line-height: 1.44;
+  }
+
+  .m-fab {
+    position: absolute;
+    right: 12px;
+    bottom: 22px;
+    width: 36px;
+    height: 36px;
+    border-radius: 12px;
+    border: none;
+    background: var(--app-accent);
+    color: var(--app-accent-fg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+    cursor: pointer;
+  }
+
+  .gesture-bar {
+    height: 14px;
+    background: var(--app-surface);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .gesture-pill {
+    width: 78px;
+    height: 3.5px;
+    border-radius: 999px;
+    background: var(--app-subtle);
+    opacity: 0.55;
+  }
+
+  .phone-caption {
+    font-size: 11px;
+    color: var(--muted-foreground, #a1a1aa);
+    text-align: center;
+  }
+
+  /* Responsive Stacking on Narrow Screens */
+  @media (max-width: 640px) {
+    .desktop-body {
+      grid-template-columns: 1fr;
+      height: auto;
+    }
+
+    .icon-rail {
+      flex-direction: row;
+      border-right: none;
+      border-bottom: 1px solid var(--app-border);
+      padding: 4px 8px;
+    }
+
+    .rail-group {
+      flex-direction: row;
+      width: auto;
+    }
+
+    .rail-btn.active::before {
+      display: none;
+    }
+
+    .feed-pane {
+      border-right: none;
+      border-bottom: 1px solid var(--app-border);
+      max-height: 220px;
+    }
+
+    .reader-pane {
+      max-height: 320px;
+    }
+
+    .win-controls {
+      display: none;
+    }
+
+    .mobile-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <!-- Interactive Theme Switcher -->
+  <div class="theme-bar" role="toolbar" aria-label="XolHN Theme Switcher">
+    <span class="theme-bar-label">Theme Preview</span>
+    <div class="theme-pills" id="theme-pills">
+      <button type="button" class="theme-pill active" data-theme="xolhn-dark">
+        <span class="swatch-pair">
+          <span class="swatch-dot" style="background:#111216"></span>
+          <span class="swatch-dot" style="background:#ff6b1a"></span>
+        </span>
+        XolHN Dark
+      </button>
+      <button type="button" class="theme-pill" data-theme="xolhn-light">
+        <span class="swatch-pair">
+          <span class="swatch-dot" style="background:#f6f4f0"></span>
+          <span class="swatch-dot" style="background:#e05300"></span>
+        </span>
+        XolHN Light
+      </button>
+      <button type="button" class="theme-pill" data-theme="rose-pine">
+        <span class="swatch-pair">
+          <span class="swatch-dot" style="background:#191724"></span>
+          <span class="swatch-dot" style="background:#eb6f92"></span>
+        </span>
+        Rosé Pine
+      </button>
+      <button type="button" class="theme-pill" data-theme="catppuccin-mocha">
+        <span class="swatch-pair">
+          <span class="swatch-dot" style="background:#1e1e2e"></span>
+          <span class="swatch-dot" style="background:#fab387"></span>
+        </span>
+        Catppuccin Mocha
+      </button>
+      <button type="button" class="theme-pill" data-theme="catppuccin-latte">
+        <span class="swatch-pair">
+          <span class="swatch-dot" style="background:#eff1f5"></span>
+          <span class="swatch-dot" style="background:#fe640b"></span>
+        </span>
+        Catppuccin Latte
+      </button>
+      <button type="button" class="theme-pill" data-theme="gruvbox-dark">
+        <span class="swatch-pair">
+          <span class="swatch-dot" style="background:#282828"></span>
+          <span class="swatch-dot" style="background:#fe8019"></span>
+        </span>
+        Gruvbox Dark
+      </button>
+    </div>
+  </div>
+
+  <!-- Themed Stage -->
+  <div class="themed-root stage" id="mockup-stage" data-app-theme="xolhn-dark">
+    <!-- MOCKUP 1: DESKTOP (WINDOWS / LINUX) -->
+    <section class="section-block">
+      <div class="section-head">
+        <span class="section-title">Desktop — Windows &amp; Linux</span>
+        <span class="section-meta">3-pane split reader • keyboard-first • read-only MVP</span>
+      </div>
+
+      <div class="desktop-window">
+        <!-- Titlebar -->
+        <div class="win-titlebar">
+          <div class="win-brand">
+            <span class="brand-mark">X</span>
+            <span class="brand-name">XolHN</span>
+          </div>
+
+          <div class="win-search">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="color:var(--app-subtle);flex-shrink:0">
+              <circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path>
+            </svg>
+            <input type="text" id="desktop-search" placeholder="Filter stories (Algolia search in app)..." aria-label="Filter stories">
+            <span class="kbd-hint">Ctrl K</span>
+          </div>
+
+          <div class="win-controls" aria-hidden="true">
+            <span class="win-ctrl">
+              <svg width="10" height="10" viewBox="0 0 12 12"><line x1="2" y1="6" x2="10" y2="6" stroke="currentColor" stroke-width="1.4"/></svg>
+            </span>
+            <span class="win-ctrl">
+              <svg width="10" height="10" viewBox="0 0 12 12"><rect x="2.5" y="2.5" width="7" height="7" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>
+            </span>
+            <span class="win-ctrl">
+              <svg width="10" height="10" viewBox="0 0 12 12"><path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.4"/></svg>
+            </span>
+          </div>
+        </div>
+
+        <!-- 3-Pane Body -->
+        <div class="desktop-body">
+          <!-- Left Feed Rail -->
+          <nav class="icon-rail" aria-label="Feeds">
+            <div class="rail-group" id="desktop-rail">
+              <button type="button" class="rail-btn active" data-feed="top" title="Top Stories">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l2.9 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l7.1-1.01L12 2z"/></svg>
+                <span class="rail-lbl">Top</span>
+              </button>
+              <button type="button" class="rail-btn" data-feed="new" title="New Stories">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+                <span class="rail-lbl">New</span>
+              </button>
+              <button type="button" class="rail-btn" data-feed="best" title="Best Stories">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 10v12"/><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z"/></svg>
+                <span class="rail-lbl">Best</span>
+              </button>
+              <button type="button" class="rail-btn" data-feed="ask" title="Ask HN">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 0 1 5 0c0 1.5-2.5 2-2.5 3.5"/><circle cx="12" cy="17" r="0.6" fill="currentColor"/></svg>
+                <span class="rail-lbl">Ask</span>
+              </button>
+              <button type="button" class="rail-btn" data-feed="show" title="Show HN">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M8 20h8"/></svg>
+                <span class="rail-lbl">Show</span>
+              </button>
+              <button type="button" class="rail-btn" data-feed="jobs" title="Jobs">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                <span class="rail-lbl">Jobs</span>
+              </button>
+            </div>
+            <div class="rail-group">
+              <button type="button" class="rail-btn" id="desktop-theme-cycle" title="Cycle Theme">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18z" fill="currentColor"/></svg>
+                <span class="rail-lbl">Theme</span>
+              </button>
+            </div>
+          </nav>
+
+          <!-- Middle Story Feed Column -->
+          <div class="feed-pane">
+            <div class="pane-head">
+              <span class="pane-title" id="desktop-feed-heading">Top Stories</span>
+              <span class="pane-sub" id="desktop-feed-count">6 loaded</span>
+            </div>
+            <div class="story-list" id="desktop-story-list"></div>
+          </div>
+
+          <!-- Right Reader & Comments Pane -->
+          <div class="reader-pane">
+            <div class="reader-scroll" id="desktop-reader-scroll">
+              <div class="reader-header" id="desktop-reader-header"></div>
+              <div class="comments-toolbar">
+                <span class="comments-count" id="desktop-comments-count">Comments</span>
+                <div class="toolbar-actions">
+                  <button type="button" class="mini-btn" id="sort-toggle">Sort: HN Default</button>
+                  <button type="button" class="mini-btn" id="collapse-all-btn">Collapse all</button>
+                </div>
+              </div>
+              <div id="desktop-comments-tree"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="desktop-toast" id="desktop-toast"></div>
+      </div>
+    </section>
+
+    <!-- MOCKUP 2: MOBILE VIEWS (ANDROID) -->
+    <section class="section-block">
+      <div class="section-head">
+        <span class="section-title">Mobile — Android</span>
+        <span class="section-meta">Feed &amp; Thread screens • touch-friendly comment collapse • read-only MVP</span>
+      </div>
+
+      <div class="mobile-grid">
+        <!-- Left Phone: Feed Screen -->
+        <div class="phone-col">
+          <div class="phone-bezel">
+            <div class="phone-screen">
+              <div class="android-status">
+                <span>16:10</span>
+                <span class="punch-hole"></span>
+                <span>5G · 94%</span>
+              </div>
+
+              <div class="android-topbar">
+                <div class="android-top-left">
+                  <span class="brand-mark">X</span>
+                  <span class="android-title">XolHN</span>
+                </div>
+                <div class="android-top-actions">
+                  <button type="button" class="icon-btn-sm" id="mobile-search-hint" title="Search">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+                  </button>
+                  <button type="button" class="icon-btn-sm" id="mobile-theme-cycle" title="Switch theme">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="13.5" cy="6.5" r="1.5" fill="currentColor"/><circle cx="17.5" cy="10.5" r="1.5" fill="currentColor"/><circle cx="8.5" cy="7.5" r="1.5" fill="currentColor"/><circle cx="6.5" cy="12.5" r="1.5" fill="currentColor"/><path d="M12 2a10 10 0 0 0 0 20c1.4 0 2.5-1.1 2.5-2.5 0-.6-.2-1.2-.6-1.6-.4-.4-.6-1-.6-1.6 0-1.4 1.1-2.5 2.5-2.5H18a4 4 0 0 0 4-4c0-4.4-4.5-7.8-10-7.8Z"/></svg>
+                  </button>
+                </div>
+              </div>
+
+              <div class="chip-row" id="mobile-feed-chips">
+                <button type="button" class="m-chip active" data-feed="top">Top</button>
+                <button type="button" class="m-chip" data-feed="best">Best</button>
+                <button type="button" class="m-chip" data-feed="new">New</button>
+                <button type="button" class="m-chip" data-feed="ask">Ask</button>
+                <button type="button" class="m-chip" data-feed="show">Show</button>
+                <button type="button" class="m-chip" data-feed="jobs">Jobs</button>
+              </div>
+
+              <div class="m-scroll" id="mobile-story-list"></div>
+
+              <div class="android-nav">
+                <div class="nav-item active">
+                  <span class="nav-pill">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+                  </span>
+                  <span>Feed</span>
+                </div>
+                <div class="nav-item">
+                  <span class="nav-pill">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+                  </span>
+                  <span>Search</span>
+                </div>
+                <div class="nav-item">
+                  <span class="nav-pill">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+                  </span>
+                  <span>Themes</span>
+                </div>
+              </div>
+
+              <div class="gesture-bar"><span class="gesture-pill"></span></div>
+            </div>
+          </div>
+          <span class="phone-caption">1. Feed Screen (tap title for link, pill for thread)</span>
+        </div>
+
+        <!-- Right Phone: Thread & Comments Screen -->
+        <div class="phone-col">
+          <div class="phone-bezel">
+            <div class="phone-screen">
+              <div class="android-status">
+                <span>16:10</span>
+                <span class="punch-hole"></span>
+                <span>5G · 94%</span>
+              </div>
+
+              <div class="android-topbar">
+                <div class="android-top-left">
+                  <span class="icon-btn-sm" aria-hidden="true">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m15 18-6-6 6-6"/></svg>
+                  </span>
+                  <span class="android-title" id="mobile-thread-bar-title">Thread</span>
+                </div>
+                <div class="android-top-actions">
+                  <button type="button" class="mini-btn" id="mobile-open-link" style="color:var(--app-accent);border-color:var(--app-accent);padding:3px 7px">Open ↗</button>
+                </div>
+              </div>
+
+              <div class="m-scroll" id="mobile-thread-scroll">
+                <div class="m-thread-head" id="mobile-thread-head"></div>
+                <div class="m-comments-wrap" id="mobile-comments-tree"></div>
+              </div>
+
+              <button type="button" class="m-fab" id="mobile-next-root" title="Jump to next top-level comment">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+              </button>
+
+              <div class="gesture-bar"><span class="gesture-pill"></span></div>
+            </div>
+          </div>
+          <span class="phone-caption">2. Thread Screen (tap header to collapse, ↓ jumps comments)</span>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script>
+(() => {
+  const STORIES = [
+    {
+      id: 421901,
+      feed: ["top", "best"],
+      title: "SQLite 3.48: Query planner notes and faster WAL checkpoints",
+      domain: "sqlite.org",
+      url: "https://sqlite.org/releaselog/3_48_0.html",
+      points: 482,
+      author: "drh_fan",
+      time: "3h ago",
+      ageMins: 180,
+      commentCount: 214,
+      selfText: "",
+      comments: [
+        {
+          id: "c1",
+          author: "systems_nick",
+          time: "2h ago",
+          ageMins: 120,
+          isOp: false,
+          html: "<p>The bounding of WAL checkpoint latency under steady write pressure is huge for embedded desktop apps. We saw tail stalls drop from <code>45ms</code> to under <code>4ms</code>.</p>",
+          children: [
+            {
+              id: "c1a",
+              author: "drh_fan",
+              time: "1h ago",
+              ageMins: 85,
+              isOp: true,
+              html: "<p>Exactly — combining <code>PRAGMA journal_mode=WAL</code> with periodic passive checkpoints makes local story caching feel instant without locking readers.</p>",
+              children: [
+                {
+                  id: "c1a1",
+                  author: "rust_sqlite",
+                  time: "52m ago",
+                  ageMins: 52,
+                  isOp: false,
+                  html: "<p>Same experience in our Linux/Android sync engine. Having one binary file per cache store keeps backups dead simple too.</p>",
+                  children: []
+                }
+              ]
+            },
+            {
+              id: "c1b",
+              author: "pg_wanderer",
+              time: "1h ago",
+              ageMins: 70,
+              isOp: false,
+              html: "<blockquote>\"Simplicity is about subtracting the obvious and adding the meaningful.\"</blockquote><p>Still amazed how well documented every query-planner edge case is in their release notes.</p>",
+              children: []
+            }
+          ]
+        },
+        {
+          id: "c2",
+          author: "cache_wizard",
+          time: "40m ago",
+          ageMins: 40,
+          isOp: false,
+          html: "<p>For anyone building an HN reader: caching Firebase item JSON blobs in SQLite with a <code>fetched_at</code> TTL cuts startup latency to near zero offline.</p>",
+          children: []
+        }
+      ]
+    },
+    {
+      id: 421944,
+      feed: ["top", "new"],
+      title: "Why Linux desktop Wayland fractional scaling still feels tricky",
+      domain: "lwn.net",
+      url: "https://lwn.net/Articles/wayland-scaling-notes/",
+      points: 319,
+      author: "kwin_dev",
+      time: "4h ago",
+      ageMins: 240,
+      commentCount: 168,
+      selfText: "",
+      comments: [
+        {
+          id: "w1",
+          author: "hidpi_user",
+          time: "3h ago",
+          ageMins: 190,
+          isOp: false,
+          html: "<p><code>wp-fractional-scale-v1</code> fixed blurriness in GTK4 and Qt6, though mixed-DPI multi-monitor setups still expose toolkit assumptions.</p>",
+          children: [
+            {
+              id: "w1a",
+              author: "compositor_eng",
+              time: "2h ago",
+              ageMins: 110,
+              isOp: false,
+              html: "<p>True, especially when apps cache glyph bitmaps at an integer scale factor before moving across monitors.</p>",
+              children: []
+            }
+          ]
+        },
+        {
+          id: "w2",
+          author: "tiling_wm",
+          time: "1h ago",
+          ageMins: 55,
+          isOp: false,
+          html: "<p>Keyboard-driven split panes shine on tiling WMs like Sway and Hyprland when dialogs stay minimal.</p>",
+          children: []
+        }
+      ]
+    },
+    {
+      id: 421988,
+      feed: ["top", "best", "show"],
+      title: "Show HN: Zero-dependency Zig HTTP/2 client for mobile & desktop",
+      domain: "github.com",
+      url: "https://github.com/example/zhttp2",
+      points: 247,
+      author: "mira_z",
+      time: "5h ago",
+      ageMins: 300,
+      commentCount: 74,
+      selfText: "Built a small multiplexed HTTP/2 client in pure Zig with connection pooling so fetching 30 parallel JSON items takes a single TLS handshake.",
+      comments: [
+        {
+          id: "z1",
+          author: "net_perf",
+          time: "4h ago",
+          ageMins: 220,
+          isOp: false,
+          html: "<p>Multiplexing over one persistent HTTP/2 socket practically eliminates the N+1 handshake penalty on high-latency cellular connections.</p>",
+          children: [
+            {
+              id: "z1a",
+              author: "mira_z",
+              time: "3h ago",
+              ageMins: 185,
+              isOp: true,
+              html: "<p>Measured ~180ms total for 30 cold item fetches over 5G vs ~950ms with short-lived HTTP/1.1 connections.</p>",
+              children: []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      id: 422015,
+      feed: ["top", "ask"],
+      title: "Ask HN: What makes a Hacker News reader actually pleasant to use?",
+      domain: "news.ycombinator.com",
+      url: "https://news.ycombinator.com/item?id=422015",
+      points: 194,
+      author: "reader_craft",
+      time: "2h ago",
+      ageMins: 135,
+      commentCount: 129,
+      selfText: "I'm designing a read-only HN client for Windows, Linux, and Android. Aside from fast comment collapse and readable typography, what small details keep you coming back?",
+      comments: [
+        {
+          id: "a1",
+          author: "ergonomic_dev",
+          time: "1h ago",
+          ageMins: 90,
+          isOp: false,
+          html: "<p>1. Color-coded indent rails.<br>2. One-tap jump to the next root comment.<br>3. Never hiding the external domain before I click.</p>",
+          children: [
+            {
+              id: "a1a",
+              author: "reader_craft",
+              time: "45m ago",
+              ageMins: 45,
+              isOp: true,
+              html: "<p>Color rails + clear touch separation between opening the article and opening comments are top of the list!</p>",
+              children: []
+            }
+          ]
+        },
+        {
+          id: "a2",
+          author: "theme_nerd",
+          time: "25m ago",
+          ageMins: 25,
+          isOp: false,
+          html: "<p>Proper palette support like <code>Rosé Pine</code>, <code>Catppuccin</code>, and <code>Gruvbox</code> instead of harsh #000/#fff contrast makes long reading sessions way easier on the eyes.</p>",
+          children: []
+        }
+      ]
+    },
+    {
+      id: 422031,
+      feed: ["top", "new", "best"],
+      title: "Writing a compact HTML sanitizer for legacy forum markup",
+      domain: "simonwillison.net",
+      url: "https://simonwillison.net/notes/html-subset/",
+      points: 156,
+      author: "parser_dan",
+      time: "6h ago",
+      ageMins: 360,
+      commentCount: 51,
+      selfText: "",
+      comments: [
+        {
+          id: "h1",
+          author: "dom_free",
+          time: "5h ago",
+          ageMins: 280,
+          isOp: false,
+          html: "<p>HN comments only emit <code>&lt;p&gt;</code>, <code>&lt;a&gt;</code>, <code>&lt;i&gt;</code>, <code>&lt;pre&gt;&lt;code&gt;</code>, and escaped HTML entities. Rendering them to native text spans beats spinning up a heavy WebView per comment.</p>",
+          children: []
+        }
+      ]
+    },
+    {
+      id: 422060,
+      feed: ["top", "jobs"],
+      title: "Oxide Computer (YC S19) Is Hiring Systems & UI Engineers",
+      domain: "oxide.computer",
+      url: "https://oxide.computer/careers",
+      points: 1,
+      author: "oxide_jobs",
+      time: "1h ago",
+      ageMins: 60,
+      commentCount: 0,
+      selfText: "Building rack-scale cloud infrastructure and transparent tooling with Rust, Svelte, and hardware co-design.",
+      comments: []
+    }
+  ];
+
+  const FEED_LABELS = {
+    top: "Top Stories",
+    new: "New Stories",
+    best: "Best Stories",
+    ask: "Ask HN",
+    show: "Show HN",
+    jobs: "Jobs"
+  };
+
+  const THEME_ORDER = [
+    "xolhn-dark",
+    "xolhn-light",
+    "rose-pine",
+    "catppuccin-mocha",
+    "catppuccin-latte",
+    "gruvbox-dark"
+  ];
+
+  let state = {
+    theme: "xolhn-dark",
+    feed: "top",
+    selectedId: STORIES[0].id,
+    searchQuery: "",
+    sortNewest: false,
+    allCollapsed: false,
+    collapsedIds: new Set()
+  };
+
+  const mockupStage = document.getElementById("mockup-stage");
+  const themePills = document.querySelectorAll(".theme-pill");
+  const desktopRailBtns = document.querySelectorAll("#desktop-rail .rail-btn[data-feed]");
+  const mobileChips = document.querySelectorAll("#mobile-feed-chips .m-chip");
+  const desktopSearch = document.getElementById("desktop-search");
+  const desktopFeedHeading = document.getElementById("desktop-feed-heading");
+  const desktopFeedCount = document.getElementById("desktop-feed-count");
+  const desktopStoryList = document.getElementById("desktop-story-list");
+  const desktopReaderHeader = document.getElementById("desktop-reader-header");
+  const desktopCommentsCount = document.getElementById("desktop-comments-count");
+  const desktopCommentsTree = document.getElementById("desktop-comments-tree");
+  const mobileStoryList = document.getElementById("mobile-story-list");
+  const mobileThreadBarTitle = document.getElementById("mobile-thread-bar-title");
+  const mobileThreadHead = document.getElementById("mobile-thread-head");
+  const mobileCommentsTree = document.getElementById("mobile-comments-tree");
+  const sortToggle = document.getElementById("sort-toggle");
+  const collapseAllBtn = document.getElementById("collapse-all-btn");
+  const desktopToast = document.getElementById("desktop-toast");
+
+  let toastTimer = null;
+  function showToast(msg) {
+    desktopToast.textContent = msg;
+    desktopToast.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => desktopToast.classList.remove("show"), 1900);
+  }
+
+  function setTheme(themeId) {
+    state.theme = themeId;
+    mockupStage.setAttribute("data-app-theme", themeId);
+    themePills.forEach((btn) => {
+      btn.classList.toggle("active", btn.dataset.theme === themeId);
+    });
+  }
+
+  function getFilteredStories() {
+    const q = state.searchQuery.trim().toLowerCase();
+    return STORIES.filter((s) => {
+      const feedOk = s.feed.includes(state.feed);
+      const qOk = !q || s.title.toLowerCase().includes(q) || s.domain.toLowerCase().includes(q) || s.author.toLowerCase().includes(q);
+      return feedOk && qOk;
+    });
+  }
+
+  function countTree(node) {
+    let total = 1;
+    for (const child of node.children) total += countTree(child);
+    return total;
+  }
+
+  function collectAllCommentIds(comments, out = []) {
+    for (const c of comments) {
+      out.push(c.id);
+      collectAllCommentIds(c.children, out);
+    }
+    return out;
+  }
+
+  function renderCommentNode(node, depth) {
+    const clampedDepth = Math.min(depth, 4);
+    const isCollapsed = state.collapsedIds.has(node.id);
+    const subtreeCount = countTree(node);
+    const toggleLabel = isCollapsed ? `[+${subtreeCount}]` : `[-]`;
+
+    const childrenHtml = node.children.length
+      ? `<div class="comment-children">${node.children.map((ch) => renderCommentNode(ch, depth + 1)).join("")}</div>`
+      : "";
+
+    return `
+      <div class="comment-node depth-${clampedDepth} ${isCollapsed ? "collapsed" : ""}" data-comment-id="${node.id}">
+        <div class="comment-head" data-toggle-id="${node.id}">
+          <span class="comment-author">${node.author}</span>
+          ${node.isOp ? `<span class="op-badge">OP</span>` : ""}
+          <span>· ${node.time}</span>
+          <span class="collapse-toggle">${toggleLabel}</span>
+        </div>
+        <div class="comment-body">${node.html}</div>
+        ${childrenHtml}
+      </div>
+    `;
+  }
+
+  function renderSelectedThread() {
+    const story = STORIES.find((s) => s.id === state.selectedId) || STORIES[0];
+    if (!story) return;
+
+    const selfHtml = story.selfText ? `<div class="reader-selftext">${story.selfText}</div>` : "";
+
+    desktopReaderHeader.innerHTML = `
+      <div class="reader-top-row">
+        <h2 class="reader-title">${story.title}</h2>
+        <button type="button" class="open-link-btn" data-open-url="${story.domain}">Open Link ↗</button>
+      </div>
+      <div class="reader-meta">
+        <span class="domain-pill">${story.domain}</span>
+        <span>${story.points} pts</span>
+        <span>· by ${story.author}</span>
+        <span>· ${story.time}</span>
+      </div>
+      ${selfHtml}
+    `;
+
+    desktopCommentsCount.textContent = story.commentCount
+      ? `${story.commentCount} comments`
+      : "No comments yet";
+
+    let roots = [...story.comments];
+    if (state.sortNewest) {
+      roots.sort((a, b) => a.ageMins - b.ageMins);
+    }
+
+    const treeHtml = roots.length
+      ? roots.map((c) => renderCommentNode(c, 1)).join("")
+      : `<p style="font-size:11.5px;color:var(--app-muted);margin:8px 0;">Job listings on Hacker News have comments disabled.</p>`;
+
+    desktopCommentsTree.innerHTML = treeHtml;
+
+    mobileThreadBarTitle.textContent = story.domain;
+    mobileThreadHead.innerHTML = `
+      <h3 class="m-thread-title">${story.title}</h3>
+      <div class="m-link-banner" data-open-url="${story.domain}">
+        <span>${story.domain}</span>
+        <span>Open in browser ↗</span>
+      </div>
+      <div class="m-thread-meta">${story.points} pts · by ${story.author} · ${story.time} · ${story.commentCount} comments</div>
+      ${selfHtml}
+    `;
+    mobileCommentsTree.innerHTML = treeHtml;
+  }
+
+  function renderLists() {
+    const filtered = getFilteredStories();
+    if (filtered.length && !filtered.some((s) => s.id === state.selectedId)) {
+      state.selectedId = filtered[0].id;
+    }
+
+    desktopFeedHeading.textContent = FEED_LABELS[state.feed] || "Stories";
+    desktopFeedCount.textContent = `${filtered.length} ${filtered.length === 1 ? "item" : "items"}`;
+
+    if (!filtered.length) {
+      desktopStoryList.innerHTML = `<div style="padding:14px 10px;font-size:11px;color:var(--app-muted);">No matching stories in this feed.</div>`;
+      mobileStoryList.innerHTML = `<div style="padding:16px 12px;font-size:11.5px;color:var(--app-muted);">No matching stories.</div>`;
+      return;
+    }
+
+    desktopStoryList.innerHTML = filtered
+      .map((s, idx) => `
+        <div class="story-row ${s.id === state.selectedId ? "selected" : ""}" data-story-id="${s.id}">
+          <span class="story-rank">${idx + 1}</span>
+          <div class="story-main">
+            <div class="story-title">${s.title}</div>
+            <div class="story-meta-row">
+              <span class="story-domain">${s.domain} · ${s.points}p · ${s.time}</span>
+              <span class="cmt-badge">${s.commentCount}</span>
+            </div>
+          </div>
+        </div>
+      `)
+      .join("");
+
+    mobileStoryList.innerHTML = filtered
+      .map((s) => `
+        <div class="m-story-card ${s.id === state.selectedId ? "selected" : ""}" data-story-id="${s.id}">
+          <div class="m-story-link-zone" data-open-url="${s.domain}">
+            <div class="m-story-title">${s.title}</div>
+            <div class="m-story-sub">
+              <span class="m-story-domain">${s.domain} ↗</span>
+              <span>· ${s.points} pts · ${s.time}</span>
+            </div>
+          </div>
+          <button type="button" class="m-cmt-pill" data-select-thread="${s.id}" title="Open comments">
+            <span>💬</span>
+            <span>${s.commentCount}</span>
+          </button>
+        </div>
+      `)
+      .join("");
+
+    renderSelectedThread();
+  }
+
+  function setFeed(feed) {
+    state.feed = feed;
+    desktopRailBtns.forEach((btn) => btn.classList.toggle("active", btn.dataset.feed === feed));
+    mobileChips.forEach((chip) => chip.classList.toggle("active", chip.dataset.feed === feed));
+    renderLists();
+  }
+
+  // Event listeners
+  themePills.forEach((btn) => {
+    btn.addEventListener("click", () => setTheme(btn.dataset.theme));
+  });
+
+  function cycleTheme() {
+    const nextIdx = (THEME_ORDER.indexOf(state.theme) + 1) % THEME_ORDER.length;
+    setTheme(THEME_ORDER[nextIdx]);
+  }
+  document.getElementById("desktop-theme-cycle").addEventListener("click", cycleTheme);
+  document.getElementById("mobile-theme-cycle").addEventListener("click", cycleTheme);
+
+  desktopRailBtns.forEach((btn) => {
+    btn.addEventListener("click", () => setFeed(btn.dataset.feed));
+  });
+
+  mobileChips.forEach((chip) => {
+    chip.addEventListener("click", () => setFeed(chip.dataset.feed));
+  });
+
+  desktopSearch.addEventListener("input", (e) => {
+    state.searchQuery = e.target.value;
+    renderLists();
+  });
+
+  desktopStoryList.addEventListener("click", (e) => {
+    const row = e.target.closest("[data-story-id]");
+    if (!row) return;
+    state.selectedId = Number(row.dataset.storyId);
+    state.allCollapsed = false;
+    collapseAllBtn.textContent = "Collapse all";
+    renderLists();
+  });
+
+  mobileStoryList.addEventListener("click", (e) => {
+    const threadBtn = e.target.closest("[data-select-thread]");
+    if (threadBtn) {
+      state.selectedId = Number(threadBtn.dataset.selectThread);
+      renderLists();
+      document.getElementById("mobile-thread-scroll").scrollTop = 0;
+      return;
+    }
+    const linkZone = e.target.closest("[data-open-url]");
+    if (linkZone) {
+      showToast(`External link: ${linkZone.dataset.openUrl} (opens in browser)`);
+    }
+  });
+
+  document.addEventListener("click", (e) => {
+    const toggle = e.target.closest("[data-toggle-id]");
+    if (toggle) {
+      const id = toggle.dataset.toggleId;
+      if (state.collapsedIds.has(id)) {
+        state.collapsedIds.delete(id);
+      } else {
+        state.collapsedIds.add(id);
+      }
+      renderSelectedThread();
+      return;
+    }
+
+    const openBtn = e.target.closest(".open-link-btn, .m-link-banner, #mobile-open-link");
+    if (openBtn) {
+      const story = STORIES.find((s) => s.id === state.selectedId) || STORIES[0];
+      showToast(`Opening ${story.domain} in default browser`);
+    }
+  });
+
+  sortToggle.addEventListener("click", () => {
+    state.sortNewest = !state.sortNewest;
+    sortToggle.textContent = state.sortNewest ? "Sort: Newest" : "Sort: HN Default";
+    renderSelectedThread();
+  });
+
+  collapseAllBtn.addEventListener("click", () => {
+    const story = STORIES.find((s) => s.id === state.selectedId) || STORIES[0];
+    const ids = collectAllCommentIds(story.comments);
+    state.allCollapsed = !state.allCollapsed;
+    if (state.allCollapsed) {
+      ids.forEach((id) => state.collapsedIds.add(id));
+      collapseAllBtn.textContent = "Expand all";
+    } else {
+      ids.forEach((id) => state.collapsedIds.delete(id));
+      collapseAllBtn.textContent = "Collapse all";
+    }
+    renderSelectedThread();
+  });
+
+  document.getElementById("mobile-next-root").addEventListener("click", () => {
+    const container = document.getElementById("mobile-thread-scroll");
+    const roots = Array.from(mobileCommentsTree.children);
+    if (!roots.length) return;
+    const currentTop = container.scrollTop;
+    const next = roots.find((el) => el.offsetTop > currentTop + 12) || roots[0];
+    container.scrollTo({ top: next.offsetTop - 6, behavior: "smooth" });
+  });
+
+  document.getElementById("mobile-search-hint").addEventListener("click", () => {
+    showToast("Algolia full-text search sheet (v1.0.0)");
+  });
+
+  // Initial render
+  renderLists();
+})();
+</script>
+</body>
+</html>

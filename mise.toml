@@ -1,0 +1,450 @@
+[tools]
+rust = { version = "stable", targets = "aarch64-linux-android,x86_64-linux-android", components = "clippy,rustfmt" }
+java = "temurin-17"
+android-sdk = "23.0"
+"cargo:cargo-ndk" = "latest"
+
+[env]
+ANDROID_API = "34"
+ANDROID_BUILD_TOOLS = "34.0.0"
+ANDROID_NDK_VERSION = "27.2.12479018"
+ANDROID_AVD_NAME = "xolhn_api34"
+ANDROID_EMULATOR_IMAGE_TAG = "google_apis"
+ANDROID_EMULATOR_DEVICE = "pixel_7"
+
+[tasks."setup:android"]
+description = "Install platform-tools, SDK platform, build-tools, and NDK via Android CLI"
+run = """
+set -euo pipefail
+android --sdk="${ANDROID_HOME}" sdk install \
+  "platform-tools" \
+  "platforms/android-${ANDROID_API}" \
+  "build-tools/${ANDROID_BUILD_TOOLS}" \
+  "ndk/${ANDROID_NDK_VERSION}"
+"""
+
+[tasks."setup:emulator"]
+description = "Install Android emulator, API 34 system image, and create default AVD"
+shell = "bash -c"
+run = '''
+set -euo pipefail
+
+if [ -z "${ANDROID_HOME:-}" ]; then
+  echo "Error: ANDROID_HOME is not set. Run via 'mise run setup:emulator'." >&2
+  exit 1
+fi
+
+ANDROID_API="${ANDROID_API:-34}"
+ANDROID_EMULATOR_IMAGE_TAG="${ANDROID_EMULATOR_IMAGE_TAG:-google_apis}"
+ANDROID_AVD_NAME="${ANDROID_AVD_NAME:-xolhn_api34}"
+ANDROID_EMULATOR_DEVICE="${ANDROID_EMULATOR_DEVICE:-pixel_7}"
+
+case "$(uname -m)" in
+  x86_64|amd64)
+    HOST_ABI="x86_64"
+    RUST_TARGET="x86_64-linux-android"
+    ;;
+  aarch64|arm64)
+    HOST_ABI="arm64-v8a"
+    RUST_TARGET="aarch64-linux-android"
+    ;;
+  *)
+    echo "Error: Unsupported host architecture '$(uname -m)' for Android emulator." >&2
+    exit 1
+    ;;
+esac
+
+if ! rustup target list --installed | grep -Fxq "${RUST_TARGET}"; then
+  echo "Installing Rust target ${RUST_TARGET}..."
+  rustup target add "${RUST_TARGET}"
+fi
+
+SYSTEM_IMAGE_PKG="system-images/android-${ANDROID_API}/${ANDROID_EMULATOR_IMAGE_TAG}/${HOST_ABI}"
+AVD_PACKAGE="system-images;android-${ANDROID_API};${ANDROID_EMULATOR_IMAGE_TAG};${HOST_ABI}"
+
+echo "Installing Android emulator and system image (${SYSTEM_IMAGE_PKG})..."
+android --sdk="${ANDROID_HOME}" sdk install "emulator" "${SYSTEM_IMAGE_PKG}"
+
+EMULATOR_BIN="${ANDROID_HOME}/emulator/emulator"
+if [ ! -x "${EMULATOR_BIN}" ]; then
+  echo "Error: Emulator binary not found at ${EMULATOR_BIN} after 'android sdk install'." >&2
+  exit 1
+fi
+
+if ! "${EMULATOR_BIN}" -list-avds 2>/dev/null | grep -Fxq "${ANDROID_AVD_NAME}"; then
+  echo "Creating AVD '${ANDROID_AVD_NAME}' (device=${ANDROID_EMULATOR_DEVICE}, image=${AVD_PACKAGE})..."
+  if ! avdmanager create avd --force \
+    --name "${ANDROID_AVD_NAME}" \
+    --package "${AVD_PACKAGE}" \
+    --device "${ANDROID_EMULATOR_DEVICE}" <<< "no"; then
+    echo "Device profile '${ANDROID_EMULATOR_DEVICE}' failed; retrying with default device profile..."
+    avdmanager create avd --force \
+      --name "${ANDROID_AVD_NAME}" \
+      --package "${AVD_PACKAGE}" <<< "no"
+  fi
+else
+  echo "AVD '${ANDROID_AVD_NAME}' already exists."
+fi
+
+AVD_HOME="${ANDROID_AVD_HOME:-${HOME}/.android/avd}"
+CONFIG_INI="${AVD_HOME}/${ANDROID_AVD_NAME}.avd/config.ini"
+if [ -f "${CONFIG_INI}" ]; then
+  if grep -qE '^hw\.keyboard[[:space:]]*=' "${CONFIG_INI}"; then
+    sed -i.bak -E 's/^hw\.keyboard[[:space:]]*=.*/hw.keyboard = yes/' "${CONFIG_INI}"
+    rm -f "${CONFIG_INI}.bak"
+  else
+    printf '\nhw.keyboard = yes\n' >> "${CONFIG_INI}"
+  fi
+  echo "Configured hardware keyboard in ${CONFIG_INI}."
+fi
+
+echo "Android emulator setup complete (AVD=${ANDROID_AVD_NAME}, ABI=${HOST_ABI}, target=${RUST_TARGET})."
+'''
+
+[tasks.setup]
+description = "Install all tools and Android SDK/NDK components"
+run = """
+set -euo pipefail
+mise install
+mise run setup:android
+"""
+
+[tasks.doctor]
+description = "Verify desktop and Android toolchains"
+run = """
+set -euo pipefail
+rustc --version
+rustup target list --installed
+java -version
+cargo ndk --version
+echo "ANDROID_HOME=${ANDROID_HOME}"
+export ANDROID_NDK_HOME="${ANDROID_HOME}/ndk/${ANDROID_NDK_VERSION}"
+echo "ANDROID_NDK_HOME=${ANDROID_NDK_HOME}"
+test -x "${ANDROID_NDK_HOME}/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android26-clang"
+echo "android-cli $(android --version)"
+adb version
+if [ -x "${ANDROID_HOME}/emulator/emulator" ]; then
+  "${ANDROID_HOME}/emulator/emulator" -version | head -n 1
+  echo "AVDs:"
+  "${ANDROID_HOME}/emulator/emulator" -list-avds || true
+else
+  echo "Android emulator not installed yet (run 'mise run setup:emulator' or 'mise run dev:android')."
+fi
+"""
+
+[tasks.check]
+description = "Type-check desktop + Android targets and run tests"
+run = """
+set -euo pipefail
+export ANDROID_NDK_HOME="${ANDROID_HOME}/ndk/${ANDROID_NDK_VERSION}"
+cargo check --workspace --exclude xolhn-android
+cargo ndk -t arm64-v8a -P 26 check -p xolhn-android
+cargo test --workspace --exclude xolhn-android
+"""
+
+[tasks.lint]
+description = "Run rustfmt check and clippy"
+run = """
+set -euo pipefail
+cargo fmt --all -- --check
+cargo clippy --workspace --exclude xolhn-android -- -D warnings
+"""
+
+[tasks."dev:desktop"]
+description = "Run XolHN desktop app"
+run = "cargo run -p xolhn-desktop"
+
+[tasks."dev:android"]
+description = "Build and run XolHN on an Android emulator (auto-boots AVD)"
+shell = "bash -c"
+usage = '''
+flag "--avd <name>" help="AVD name to launch if no emulator is running"
+flag "--no-logs" help="Exit immediately after launching instead of streaming logcat"
+flag "--cold-boot" help="Pass -no-snapshot-load when launching the emulator"
+flag "--release" help="Build release shared library and APK (assembleRelease)"
+'''
+run = '''
+set -euo pipefail
+
+cd "${MISE_PROJECT_ROOT:-$(pwd)}"
+
+EXPLICIT_AVD="${usage_avd:-}"
+NO_LOGS="${usage_no_logs:-false}"
+COLD_BOOT="${usage_cold_boot:-false}"
+RELEASE_BUILD="${usage_release:-false}"
+
+if [ -z "${ANDROID_HOME:-}" ] || [ ! -d "${ANDROID_HOME}" ]; then
+  echo "Error: ANDROID_HOME is not set or missing. Run 'mise run setup' first." >&2
+  exit 1
+fi
+
+export ANDROID_NDK_HOME="${ANDROID_NDK_HOME:-${ANDROID_HOME}/ndk/${ANDROID_NDK_VERSION:-}}"
+if [ ! -d "${ANDROID_NDK_HOME}" ]; then
+  echo "Error: ANDROID_NDK_HOME (${ANDROID_NDK_HOME}) not found. Run 'mise run setup' first." >&2
+  exit 1
+fi
+
+export PATH="${ANDROID_HOME}/emulator:${PATH}"
+
+wait_for_boot() {
+  local serial="$1"
+  local pid="$2"
+  local log_file="${3:-}"
+  local elapsed=0
+  local timeout_secs=180
+
+  while [ "${elapsed}" -lt "${timeout_secs}" ]; do
+    if [ -n "${pid}" ] && ! kill -0 "${pid}" 2>/dev/null; then
+      echo "Error: Android emulator exited unexpectedly before completing boot." >&2
+      if [ -n "${log_file}" ] && [ -f "${log_file}" ]; then
+        echo "--- Emulator log tail (${log_file}) ---" >&2
+        tail -n 40 "${log_file}" >&2 || true
+      fi
+      return 1
+    fi
+
+    local boot_completed
+    boot_completed="$(adb -s "${serial}" shell getprop sys.boot_completed 2>/dev/null | tr -d '\r\n' || true)"
+    if [ "${boot_completed}" = "1" ] && adb -s "${serial}" shell pm path android >/dev/null 2>&1; then
+      return 0
+    fi
+
+    sleep 1
+    elapsed=$((elapsed + 1))
+  done
+
+  echo "Error: Timed out after ${timeout_secs}s waiting for ${serial} to boot." >&2
+  if [ -n "${log_file}" ] && [ -f "${log_file}" ]; then
+    echo "--- Emulator log tail (${log_file}) ---" >&2
+    tail -n 40 "${log_file}" >&2 || true
+  fi
+  return 1
+}
+
+adb start-server >/dev/null
+
+RUNNING_LINE="$(adb devices | grep -E '^emulator-[0-9]+[[:space:]]+(device|offline)$' | head -n 1 || true)"
+SERIAL=""
+EMU_ABI=""
+STARTED_EMULATOR=false
+EMU_PID=""
+EMU_LOG=""
+AVD_NAME=""
+
+if [ -n "${RUNNING_LINE}" ]; then
+  SERIAL="$(printf '%s\n' "${RUNNING_LINE}" | awk '{print $1}')"
+  EMU_STATE="$(printf '%s\n' "${RUNNING_LINE}" | awk '{print $2}')"
+  echo "Using running Android emulator ${SERIAL} (state=${EMU_STATE})."
+  if [ "${EMU_STATE}" != "device" ]; then
+    adb -s "${SERIAL}" wait-for-device
+  fi
+  wait_for_boot "${SERIAL}" "" ""
+  EMU_ABI="$(adb -s "${SERIAL}" shell getprop ro.product.cpu.abi | tr -d '\r\n')"
+else
+  EMULATOR_BIN="${ANDROID_HOME}/emulator/emulator"
+  AVD_LIST=""
+  if [ -x "${EMULATOR_BIN}" ]; then
+    AVD_LIST="$("${EMULATOR_BIN}" -list-avds 2>/dev/null || true)"
+  fi
+
+  if [ ! -x "${EMULATOR_BIN}" ] || { [ -z "${AVD_LIST}" ] && [ -z "${EXPLICIT_AVD}" ] && [ -z "${ANDROID_AVD:-}" ]; }; then
+    echo "Android emulator or AVD not found; running 'mise run setup:emulator'..."
+    mise run setup:emulator
+    AVD_LIST="$("${EMULATOR_BIN}" -list-avds 2>/dev/null || true)"
+  fi
+
+  if [ -n "${EXPLICIT_AVD}" ]; then
+    AVD_NAME="${EXPLICIT_AVD}"
+  elif [ -n "${ANDROID_AVD:-}" ]; then
+    AVD_NAME="${ANDROID_AVD}"
+  elif [ -n "${ANDROID_AVD_NAME:-}" ] && printf '%s\n' "${AVD_LIST}" | grep -Fxq "${ANDROID_AVD_NAME}"; then
+    AVD_NAME="${ANDROID_AVD_NAME}"
+  else
+    AVD_NAME="$(printf '%s\n' "${AVD_LIST}" | sed '/^[[:space:]]*$/d' | head -n 1 || true)"
+  fi
+
+  if [ -z "${AVD_NAME}" ]; then
+    echo "Error: No AVD available. Run 'mise run setup:emulator' or pass '--avd <name>'." >&2
+    exit 1
+  fi
+
+  if ! printf '%s\n' "${AVD_LIST}" | grep -Fxq "${AVD_NAME}"; then
+    echo "Error: AVD '${AVD_NAME}' does not exist. Available AVDs:" >&2
+    printf '%s\n' "${AVD_LIST}" >&2
+    exit 1
+  fi
+
+  AVD_HOME="${ANDROID_AVD_HOME:-${HOME}/.android/avd}"
+  CONFIG_INI="${AVD_HOME}/${AVD_NAME}.avd/config.ini"
+  if [ -f "${CONFIG_INI}" ]; then
+    EMU_ABI="$(grep -E '^abi\.type[[:space:]]*=' "${CONFIG_INI}" | head -n 1 | cut -d= -f2 | tr -d '[:space:]' || true)"
+  fi
+  if [ -z "${EMU_ABI}" ]; then
+    case "$(uname -m)" in
+      x86_64|amd64) EMU_ABI="x86_64" ;;
+      arm64|aarch64) EMU_ABI="arm64-v8a" ;;
+      *)
+        echo "Error: Unable to determine ABI for AVD '${AVD_NAME}' on $(uname -m)." >&2
+        exit 1
+        ;;
+    esac
+  fi
+
+  if [ "$(uname -s)" = "Linux" ] && { [ ! -r /dev/kvm ] || [ ! -w /dev/kvm ]; }; then
+    echo "Warning: /dev/kvm is missing or not accessible; emulator startup may fail or be very slow." >&2
+  fi
+
+  EMU_LOG="/tmp/xolhn-emulator-${AVD_NAME}.log"
+  EMU_CMD=(
+    "${EMULATOR_BIN}"
+    -avd "${AVD_NAME}"
+    -no-boot-anim
+    -gpu "${ANDROID_EMULATOR_GPU:-auto}"
+  )
+  if [ "${COLD_BOOT}" = "true" ]; then
+    EMU_CMD+=(-no-snapshot-load)
+  fi
+  if [ -n "${ANDROID_EMULATOR_ARGS:-}" ]; then
+    read -r -a EXTRA_EMU_ARGS <<< "${ANDROID_EMULATOR_ARGS}"
+    EMU_CMD+=("${EXTRA_EMU_ARGS[@]}")
+  fi
+
+  set +m
+  EMU_LAUNCHER=()
+  if [ "$(uname -s)" = "Linux" ] && [ -n "${DISPLAY:-}" ]; then
+    EMU_LAUNCHER=(env "QT_QPA_PLATFORM=${ANDROID_EMULATOR_QT_QPA_PLATFORM:-xcb}" "${EMU_CMD[@]}")
+  else
+    EMU_LAUNCHER=("${EMU_CMD[@]}")
+  fi
+
+  echo "Starting emulator '${AVD_NAME}' (ABI=${EMU_ABI}, log=${EMU_LOG})..."
+  if command -v setsid >/dev/null 2>&1; then
+    setsid "${EMU_LAUNCHER[@]}" >"${EMU_LOG}" 2>&1 </dev/null &
+  else
+    nohup "${EMU_LAUNCHER[@]}" >"${EMU_LOG}" 2>&1 </dev/null &
+  fi
+  EMU_PID=$!
+  disown "${EMU_PID}" 2>/dev/null || true
+  STARTED_EMULATOR=true
+fi
+
+case "${EMU_ABI}" in
+  x86_64) RUST_TARGET="x86_64-linux-android" ;;
+  arm64-v8a) RUST_TARGET="aarch64-linux-android" ;;
+  armeabi-v7a) RUST_TARGET="armv7-linux-androideabi" ;;
+  x86) RUST_TARGET="i686-linux-android" ;;
+  *)
+    echo "Error: Unsupported emulator ABI '${EMU_ABI}'." >&2
+    exit 1
+    ;;
+esac
+
+if ! rustup target list --installed | grep -Fxq "${RUST_TARGET}"; then
+  echo "Installing Rust target ${RUST_TARGET}..."
+  rustup target add "${RUST_TARGET}"
+fi
+
+NDK_ARGS=(-t "${EMU_ABI}" -P 26 -o android/app/src/main/jniLibs build -p xolhn-android)
+if [ "${RELEASE_BUILD}" = "true" ]; then
+  NDK_ARGS+=(--release)
+  GRADLE_TASK="assembleRelease"
+  APK_PATH="android/app/build/outputs/apk/release/app-release.apk"
+else
+  GRADLE_TASK="assembleDebug"
+  APK_PATH="android/app/build/outputs/apk/debug/app-debug.apk"
+fi
+
+echo "Building xolhn-android (${EMU_ABI}) and assembling ${GRADLE_TASK}..."
+cargo ndk "${NDK_ARGS[@]}"
+(cd android && ./gradlew "${GRADLE_TASK}" "-PxolhnAbi=${EMU_ABI}")
+
+if [ ! -f "${APK_PATH}" ]; then
+  echo "Error: Expected APK not found at ${APK_PATH}." >&2
+  exit 1
+fi
+
+if [ "${STARTED_EMULATOR}" = "true" ]; then
+  echo "Waiting for emulator '${AVD_NAME}' to attach to adb..."
+  elapsed=0
+  timeout_secs=180
+  while [ "${elapsed}" -lt "${timeout_secs}" ]; do
+    if ! kill -0 "${EMU_PID}" 2>/dev/null; then
+      echo "Error: Android emulator exited unexpectedly while starting." >&2
+      if [ -f "${EMU_LOG}" ]; then
+        echo "--- Emulator log tail (${EMU_LOG}) ---" >&2
+        tail -n 40 "${EMU_LOG}" >&2 || true
+      fi
+      exit 1
+    fi
+    SERIAL="$(adb devices | grep -E '^emulator-[0-9]+[[:space:]]+(device|offline)$' | awk '{print $1}' | head -n 1 || true)"
+    if [ -n "${SERIAL}" ]; then
+      break
+    fi
+    sleep 1
+    elapsed=$((elapsed + 1))
+  done
+
+  if [ -z "${SERIAL}" ]; then
+    echo "Error: Timed out waiting for emulator '${AVD_NAME}' to appear in 'adb devices'." >&2
+    exit 1
+  fi
+
+  adb -s "${SERIAL}" wait-for-device
+  wait_for_boot "${SERIAL}" "${EMU_PID}" "${EMU_LOG}"
+  adb -s "${SERIAL}" shell wm dismiss-keyguard >/dev/null 2>&1 || true
+fi
+
+echo "Installing ${APK_PATH} onto ${SERIAL}..."
+adb -s "${SERIAL}" install -r "${APK_PATH}"
+adb -s "${SERIAL}" logcat -c >/dev/null 2>&1 || true
+
+echo "Launching XolHN on ${SERIAL}..."
+adb -s "${SERIAL}" shell am start -S \
+  -n "dev.xolhn.app/dev.gpui.mobile.GpuiActivity" \
+  -a android.intent.action.MAIN \
+  -c android.intent.category.LAUNCHER
+
+if [ "${NO_LOGS}" = "false" ]; then
+  echo "XolHN launched on ${SERIAL} (${EMU_ABI}). Streaming logs (Ctrl-C to detach; emulator stays running)..."
+  trap 'exit 0' INT TERM
+  adb -s "${SERIAL}" logcat -s xolhn:V gpui:V RustStdoutStderr:V AndroidRuntime:E
+fi
+'''
+
+[tasks."build:desktop"]
+description = "Build release desktop binary"
+run = "cargo build -p xolhn-desktop --release"
+
+[tasks."build:android-lib"]
+description = "Compile xolhn-android cdylib into Gradle jniLibs (arm64-v8a)"
+run = """
+set -euo pipefail
+export ANDROID_NDK_HOME="${ANDROID_HOME}/ndk/${ANDROID_NDK_VERSION}"
+cargo ndk -t arm64-v8a -P 26 -o android/app/src/main/jniLibs \
+  build -p xolhn-android
+"""
+
+[tasks."build:android"]
+description = "Build debug Android APK"
+depends = ["build:android-lib"]
+dir = "android"
+run = "./gradlew assembleDebug"
+
+[tasks."build:android-release"]
+description = "Build release Android APK"
+run = """
+set -euo pipefail
+export ANDROID_NDK_HOME="${ANDROID_HOME}/ndk/${ANDROID_NDK_VERSION}"
+cargo ndk -t arm64-v8a -P 26 -o android/app/src/main/jniLibs \
+  build -p xolhn-android --release
+(cd android && ./gradlew assembleRelease)
+"""
+
+[tasks."install:android"]
+description = "Build and install debug APK onto connected Android device"
+depends = ["build:android"]
+run = "adb install -r android/app/build/outputs/apk/debug/app-debug.apk"
+
+[tasks."logs:android"]
+description = "Stream XolHN Rust/Android logcat output"
+run = "adb logcat -s xolhn:V RustStdoutStderr:V AndroidRuntime:E"
