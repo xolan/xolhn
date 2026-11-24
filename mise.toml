@@ -16,6 +16,7 @@ ANDROID_EMULATOR_DEVICE = "pixel_7"
 
 [tasks."setup:android"]
 description = "Install platform-tools, SDK platform, build-tools, and NDK via Android CLI"
+shell = "bash -c"
 run = """
 set -euo pipefail
 android --sdk="${ANDROID_HOME}" sdk install \
@@ -105,6 +106,7 @@ echo "Android emulator setup complete (AVD=${ANDROID_AVD_NAME}, ABI=${HOST_ABI},
 
 [tasks.setup]
 description = "Install all tools and Android SDK/NDK components"
+shell = "bash -c"
 run = """
 set -euo pipefail
 mise install
@@ -113,6 +115,7 @@ mise run setup:android
 
 [tasks.doctor]
 description = "Verify desktop and Android toolchains"
+shell = "bash -c"
 run = """
 set -euo pipefail
 rustc --version
@@ -136,6 +139,7 @@ fi
 
 [tasks.check]
 description = "Type-check desktop + Android targets and run tests"
+shell = "bash -c"
 run = """
 set -euo pipefail
 export ANDROID_NDK_HOME="${ANDROID_HOME}/ndk/${ANDROID_NDK_VERSION}"
@@ -443,6 +447,7 @@ run = "cargo build -p xolhn-desktop --release"
 
 [tasks."build:android-lib"]
 description = "Compile xolhn-android cdylib into Gradle jniLibs (arm64-v8a)"
+shell = "bash -c"
 run = """
 set -euo pipefail
 export ANDROID_NDK_HOME="${ANDROID_HOME}/ndk/${ANDROID_NDK_VERSION}"
@@ -458,6 +463,7 @@ run = "./gradlew assembleDebug"
 
 [tasks."build:android-release"]
 description = "Build release Android APK"
+shell = "bash -c"
 run = """
 set -euo pipefail
 export ANDROID_NDK_HOME="${ANDROID_HOME}/ndk/${ANDROID_NDK_VERSION}"

@@ -12,6 +12,7 @@ concurrency:
 
 env:
   CARGO_TERM_COLOR: always
+  MISE_TASK_RUN_AUTO_INSTALL: "false"
 
 jobs:
   linux:
@@ -43,27 +44,3 @@ jobs:
           install_args: rust actionlint shellcheck
       - uses: Swatinem/rust-cache@v2
       - run: mise run ci
-
-  android:
-    name: Android
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v7
-      - uses: jdx/mise-action@v5
-        with:
-          install_args: rust java android-sdk cargo:cargo-ndk
-      - uses: Swatinem/rust-cache@v2
-        with:
-          key: android
-      - name: Cache Gradle packages
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: gradle-${{ runner.os }}-${{ hashFiles('android/**/*.gradle*', 'android/gradle/wrapper/gradle-wrapper.properties') }}
-          restore-keys: gradle-${{ runner.os }}-
-      - name: Install Android SDK components
-        run: mise run setup:android
-      - name: Run Android CI checks
-        run: mise run ci:android

@@ -68,14 +68,57 @@ mise run doctor
 
 ### CI & Releases
 
-GitHub Actions workflows live in [.github/workflows/ci.yml](.github/workflows/ci.yml) (Linux, Windows, Android) and [.github/workflows/release.yml](.github/workflows/release.yml) (auto-releases `v<version>` on `main` when the workspace version in [Cargo.toml](Cargo.toml) has no matching git tag yet).
+GitHub Actions workflows live in [.github/workflows/ci.yml](.github/workflows/ci.yml) (Linux and Windows) and [.github/workflows/release.yml](.github/workflows/release.yml) (auto-releases `v<version>` on `main` when the workspace version in [Cargo.toml](Cargo.toml) has no matching git tag yet). Android builds are skipped on CI for now and built/sideloaded locally.
 
-For production Android release signing, configure these repository secrets (`Settings -> Secrets and variables -> Actions`); when unset, release builds fall back to debug keystore signing:
+## Sideloading on a Physical Android Device
 
-- `ANDROID_KEYSTORE_BASE64`
-- `ANDROID_KEYSTORE_PASSWORD`
-- `ANDROID_KEY_ALIAS`
-- `ANDROID_KEY_PASSWORD`
+Physical Android phones (`arm64-v8a`, Android 8.0 / API 26+) can be installed either directly over USB with `adb` or by copying a packaged APK onto the device.
+
+### 1. Prerequisites
+
+1. Install the local toolchains and Android SDK/NDK if you haven't already:
+   ```fish
+   mise run setup
+   ```
+2. On your Android device, enable **Developer options** (*Settings → About phone → tap Build number 7 times*), then enable **USB debugging** (*Settings → System → Developer options → USB debugging*) if installing via `adb`.
+3. On Arch/CachyOS Linux hosts, ensure USB `adb` permissions are configured (`sudo pacman -S android-udev && sudo usermod -aG adbusers $USER`, then log out and back in).
+
+### 2. Option A: Install over USB (`adb`)
+
+1. Connect the phone via USB, accept the **Allow USB debugging** prompt on the device, and verify it appears as `device`:
+   ```fish
+   mise exec -- adb devices
+   ```
+2. Build and install the release APK (recommended for day-to-day use):
+   ```fish
+   mise run build:android-release
+   mise exec -- adb -d install -r android/app/build/outputs/apk/release/app-release.apk
+   ```
+   > By default, `assembleRelease` falls back to debug-keystore signing so the APK can be sideloaded directly. To sign with your own release keystore instead, export `ANDROID_KEYSTORE_PATH`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, and `ANDROID_KEY_PASSWORD` before building.
+3. Alternatively, for quick debug testing:
+   ```fish
+   mise run install:android
+   ```
+
+**Troubleshooting `adb` installs:**
+- If both an emulator and a physical phone are attached, `-d` targets the USB device, or pass `-s <serial>` from `adb devices`.
+- If switching between builds signed with different keys (for example, debug-signed vs. custom release keystore), uninstall the existing `dev.xolhn.app` package first:
+  ```fish
+  mise exec -- adb -d uninstall dev.xolhn.app
+  ```
+- Optional runtime log inspection:
+  ```fish
+  mise run logs:android
+  ```
+
+### 3. Option B: Install APK Directly on the Phone (No USB Debugging)
+
+1. Build and package a versioned `arm64-v8a` APK into `dist/`:
+   ```fish
+   mise run package:android
+   ```
+2. Transfer `dist/xolhn-<version>-android-arm64-v8a.apk` to your phone (USB file transfer, LocalSend, etc.).
+3. Tap the `.apk` file in the phone's file manager and allow **Install unknown apps** when prompted.
 
 ## Project Documents
 

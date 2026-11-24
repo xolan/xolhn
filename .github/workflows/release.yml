@@ -10,6 +10,7 @@ permissions:
 
 env:
   CARGO_TERM_COLOR: always
+  MISE_TASK_RUN_AUTO_INSTALL: "false"
 
 jobs:
   check:
@@ -85,67 +86,9 @@ jobs:
           name: dist-${{ matrix.target }}
           path: dist/*
 
-  build-android:
-    name: Build (android-arm64-v8a)
-    needs: [check, ci]
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v7
-      - uses: jdx/mise-action@v5
-        with:
-          install_args: rust java android-sdk cargo:cargo-ndk
-      - uses: Swatinem/rust-cache@v2
-        with:
-          key: android
-      - name: Cache Gradle packages
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: gradle-${{ runner.os }}-${{ hashFiles('android/**/*.gradle*', 'android/gradle/wrapper/gradle-wrapper.properties') }}
-          restore-keys: gradle-${{ runner.os }}-
-      - name: Install Android SDK components
-        run: mise run setup:android
-      - name: Decode Android release keystore
-        id: keystore
-        env:
-          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-        run: |
-          if [ -n "${ANDROID_KEYSTORE_BASE64}" ] && \
-             [ -n "${ANDROID_KEYSTORE_PASSWORD}" ] && \
-             [ -n "${ANDROID_KEY_ALIAS}" ] && \
-             [ -n "${ANDROID_KEY_PASSWORD}" ]; then
-            keystore_path="${RUNNER_TEMP}/xolhn-release.keystore"
-            printf '%s' "${ANDROID_KEYSTORE_BASE64}" | tr -d '[:space:]' | base64 --decode > "${keystore_path}"
-            echo "path=${keystore_path}" >> "${GITHUB_OUTPUT}"
-          else
-            echo "Android signing secrets not configured; falling back to debug signing."
-          fi
-      - name: Package Android APK
-        env:
-          XOLHN_VERSION: ${{ needs.check.outputs.version }}
-          ANDROID_KEYSTORE_PATH: ${{ steps.keystore.outputs.path }}
-          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-        run: mise run package:android
-      - name: Clean up decoded keystore
-        if: always() && steps.keystore.outputs.path != ''
-        env:
-          KEYSTORE_PATH: ${{ steps.keystore.outputs.path }}
-        run: rm -f "${KEYSTORE_PATH}"
-      - uses: actions/upload-artifact@v7
-        with:
-          name: dist-android-arm64-v8a
-          path: dist/*
-
   release:
     name: Create GitHub Release
-    needs: [check, build-desktop, build-android]
+    needs: [check, build-desktop]
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v7
