@@ -1,15 +1,27 @@
 package dev.gpui.mobile;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
+import android.animation.ObjectAnimator;
+import android.animation.PropertyValuesHolder;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.media.AudioManager;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.SystemClock;
 import android.util.Log;
 import android.view.KeyEvent;
+import android.view.View;
+import android.view.WindowManager;
+import android.view.animation.AccelerateInterpolator;
 
+import androidx.core.graphics.Insets;
 import androidx.core.splashscreen.SplashScreen;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 
 /**
  * Custom Activity extending NativeActivity that integrates with the
@@ -29,11 +41,15 @@ public class GpuiActivity extends GpuiInputActivity {
     /** Whether the native .so has been loaded via System.loadLibrary. */
     private static volatile boolean sNativeLibLoaded = false;
 
+    private static final long MIN_SPLASH_DURATION_MS = 480L;
+    private long mSplashStartUptimeMs = 0L;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         // Install the splash screen BEFORE calling super.onCreate().
         // This is required by the AndroidX SplashScreen API.
         SplashScreen splash = SplashScreen.installSplashScreen(this);
+        mSplashStartUptimeMs = SystemClock.uptimeMillis();
 
         // NativeActivity loads the .so via dlopen (loadNativeCode), which does
         // NOT register JNI symbols with the classloader. We must call
@@ -57,14 +73,110 @@ public class GpuiActivity extends GpuiInputActivity {
             }
         }
 
-        // Keep the splash screen visible until the native side signals readiness.
-        splash.setKeepOnScreenCondition(() -> !isNativeReady());
+        // Keep the splash screen visible until the native side is ready and the boot X-draw finishes.
+        splash.setKeepOnScreenCondition(() ->
+                !isNativeReady() || (SystemClock.uptimeMillis() - mSplashStartUptimeMs) < MIN_SPLASH_DURATION_MS);
+
+        splash.setOnExitAnimationListener(splashScreenView -> {
+            View rootView = splashScreenView.getView();
+            try {
+                View iconView = splashScreenView.getIconView();
+                if (iconView != null) {
+                    ObjectAnimator iconAnim = ObjectAnimator.ofPropertyValuesHolder(
+                            iconView,
+                            PropertyValuesHolder.ofFloat(View.SCALE_X, 1f, 1.12f),
+                            PropertyValuesHolder.ofFloat(View.SCALE_Y, 1f, 1.12f),
+                            PropertyValuesHolder.ofFloat(View.ALPHA, 1f, 0f));
+                    iconAnim.setInterpolator(new AccelerateInterpolator());
+                    iconAnim.setDuration(200L);
+                    iconAnim.start();
+                }
+            } catch (Exception ignored) {
+                // Guard against OEM / relaunch SplashScreenView.getIconView() quirks.
+            }
+
+            ObjectAnimator fadeOut = ObjectAnimator.ofFloat(rootView, View.ALPHA, 1f, 0f);
+            fadeOut.setInterpolator(new AccelerateInterpolator());
+            fadeOut.setDuration(200L);
+            fadeOut.addListener(new AnimatorListenerAdapter() {
+                @Override
+                public void onAnimationEnd(Animator animation) {
+                    splashScreenView.remove();
+                }
+
+                @Override
+                public void onAnimationCancel(Animator animation) {
+                    splashScreenView.remove();
+                }
+            });
+            fadeOut.start();
+        });
 
         // Route volume keys to the MUSIC stream so they control media volume
         // rather than the ringer/notification volume.
         setVolumeControlStream(AudioManager.STREAM_MUSIC);
 
         super.onCreate(savedInstanceState);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            WindowManager.LayoutParams lp = getWindow().getAttributes();
+            lp.layoutInDisplayCutoutMode =
+                    WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS;
+            getWindow().setAttributes(lp);
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            WindowManager.LayoutParams lp = getWindow().getAttributes();
+            lp.layoutInDisplayCutoutMode =
+                    WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
+            getWindow().setAttributes(lp);
+        }
+
+        View decorView = getWindow().getDecorView();
+        ViewCompat.setOnApplyWindowInsetsListener(decorView, (view, windowInsets) -> {
+            dispatchSafeAreaInsets(windowInsets);
+            return ViewCompat.onApplyWindowInsets(view, windowInsets);
+        });
+        WindowInsetsCompat initialInsets = ViewCompat.getRootWindowInsets(decorView);
+        if (initialInsets != null) {
+            dispatchSafeAreaInsets(initialInsets);
+        }
+        ViewCompat.requestApplyInsets(decorView);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        View decorView = getWindow().getDecorView();
+        WindowInsetsCompat insets = ViewCompat.getRootWindowInsets(decorView);
+        if (insets != null) {
+            dispatchSafeAreaInsets(insets);
+        }
+        ViewCompat.requestApplyInsets(decorView);
+    }
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        if (hasFocus) {
+            View decorView = getWindow().getDecorView();
+            WindowInsetsCompat insets = ViewCompat.getRootWindowInsets(decorView);
+            if (insets != null) {
+                dispatchSafeAreaInsets(insets);
+            }
+        }
+    }
+
+    private void dispatchSafeAreaInsets(WindowInsetsCompat windowInsets) {
+        Insets safe = windowInsets.getInsets(
+                WindowInsetsCompat.Type.systemBars()
+                        | WindowInsetsCompat.Type.displayCutout());
+        if (!sNativeLibLoaded) {
+            return;
+        }
+        try {
+            nativeOnSafeAreaInsets(safe.top, safe.bottom, safe.left, safe.right);
+        } catch (UnsatisfiedLinkError e) {
+            Log.w("GpuiActivity", "nativeOnSafeAreaInsets not available yet");
+        }
     }
 
     /**
@@ -141,4 +253,9 @@ public class GpuiActivity extends GpuiInputActivity {
      * JNI bridge to notify Rust of an incoming deeplink URL.
      */
     private static native void nativeOnDeepLink(String url);
+
+    /**
+     * JNI bridge to forward system bar and display cutout safe-area insets in physical pixels.
+     */
+    private static native void nativeOnSafeAreaInsets(int top, int bottom, int left, int right);
 }

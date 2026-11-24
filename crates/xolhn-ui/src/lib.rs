@@ -5,7 +5,7 @@ pub mod state;
 pub mod theme_bridge;
 pub mod views;
 
-pub use state::{AppPaths, ChromeCallback};
+pub use state::{AppPaths, ChromeCallback, SafeAreaInsets, SafeAreaProvider};
 pub use views::app_view::{XolhnApp, bind_keys};
 
 use gpui::AppContext as _;
@@ -18,6 +18,31 @@ struct XolhnRuntimeConfig {
 }
 
 impl gpui::Global for XolhnRuntimeConfig {}
+
+#[derive(Clone)]
+struct SafeAreaProviderGlobal(SafeAreaProvider);
+
+impl gpui::Global for SafeAreaProviderGlobal {}
+
+/// Registers a platform provider for logical-pixel safe area insets.
+pub fn set_safe_area_provider(cx: &mut gpui::App, provider: SafeAreaProvider) {
+    cx.set_global(SafeAreaProviderGlobal(provider));
+}
+
+pub(crate) fn effective_safe_area(window: &gpui::Window, cx: &gpui::App) -> SafeAreaInsets {
+    let win_insets = window.insets().effective();
+    let from_window = SafeAreaInsets {
+        top: f32::from(win_insets.top),
+        bottom: f32::from(win_insets.bottom),
+        left: f32::from(win_insets.left),
+        right: f32::from(win_insets.right),
+    };
+    let from_provider = cx
+        .try_global::<SafeAreaProviderGlobal>()
+        .map(|provider| (provider.0)(window.scale_factor()))
+        .unwrap_or_default();
+    from_window.max_edges(from_provider)
+}
 
 /// Initializes GPUI Kit, registers bundled fonts, applies persisted theme & typography,
 /// and installs keyboard bindings for XolHN.

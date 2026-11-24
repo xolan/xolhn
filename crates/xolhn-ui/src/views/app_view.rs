@@ -8,7 +8,7 @@ use gpui::prelude::FluentBuilder as _;
 use gpui::{
     AnyElement, App, AppContext as _, AsyncApp, Context, Entity, FocusHandle, Focusable,
     FontWeight, InteractiveElement as _, IntoElement, KeyBinding, ListAlignment, ListOffset,
-    ListState, MouseButton, ParentElement as _, Render, Role, ScrollHandle, SharedString,
+    ListState, MouseButton, ParentElement as _, Pixels, Render, Role, ScrollHandle, SharedString,
     StatefulInteractiveElement as _, Styled as _, Subscription, Task, UniformListScrollHandle,
     WeakEntity, Window, div, list, px, rems, transparent_black,
 };
@@ -1551,7 +1551,13 @@ impl XolhnApp {
             .child(top_bar)
             .child(body)
             .when_some(self.toast.as_deref(), |this, msg| {
-                this.child(render_toast_overlay(msg, colors, false, false))
+                this.child(render_toast_overlay(
+                    msg,
+                    colors,
+                    false,
+                    false,
+                    crate::SafeAreaInsets::default(),
+                ))
             })
             .into_any_element()
     }
@@ -2004,7 +2010,11 @@ impl XolhnApp {
         cx: &Context<Self>,
     ) -> AnyElement {
         let ui_colors = *colors;
-        let insets = window.insets().effective();
+        let safe = crate::effective_safe_area(window, cx);
+        let safe_top = px(safe.top);
+        let safe_bottom = px(safe.bottom);
+        let safe_left = px(safe.left);
+        let safe_right = px(safe.right);
         let showing_thread = self.mobile_showing_thread && self.mobile_tab != MobileTab::Settings;
 
         let mut root = v_flex()
@@ -2013,16 +2023,30 @@ impl XolhnApp {
             .relative()
             .bg(ui_colors.bg)
             .text_color(ui_colors.text)
-            .pt(insets.top)
-            .pb(insets.bottom)
-            .pl(insets.left)
-            .pr(insets.right);
+            .when(safe.top > 0.0, |this| {
+                this.child(
+                    div()
+                        .id("mobile-safe-top")
+                        .w_full()
+                        .h(safe_top)
+                        .flex_shrink_0()
+                        .bg(ui_colors.surface),
+                )
+            });
 
         if showing_thread {
             let reader = self.render_reader(&ui_colors, true, now_unix, cx);
-            root = root.child(div().flex_1().min_h_0().w_full().child(reader));
+            root = root.child(
+                div()
+                    .flex_1()
+                    .min_h_0()
+                    .w_full()
+                    .bg(ui_colors.surface)
+                    .pl(safe_left)
+                    .pr(safe_right)
+                    .child(reader),
+            );
         } else {
-            let top_bar = self.render_mobile_top_bar(&ui_colors, cx);
             let body: AnyElement = match self.mobile_tab {
                 MobileTab::Feed => self.render_mobile_feed_pane(&ui_colors, now_unix, cx),
                 MobileTab::Search => {
@@ -2060,84 +2084,41 @@ impl XolhnApp {
                     )
                 }
             };
-            let bottom_nav = self.render_mobile_bottom_nav(&ui_colors, cx);
+            let bottom_nav = self.render_mobile_bottom_nav(&ui_colors, safe_left, safe_right, cx);
 
             root = root
-                .child(top_bar)
-                .child(div().flex_1().min_h_0().w_full().child(body))
+                .child(
+                    div()
+                        .flex_1()
+                        .min_h_0()
+                        .w_full()
+                        .pl(safe_left)
+                        .pr(safe_right)
+                        .child(body),
+                )
                 .child(bottom_nav);
         }
 
-        root.when_some(self.toast.as_deref(), |this, msg| {
-            this.child(render_toast_overlay(msg, &ui_colors, true, showing_thread))
+        root.when(safe.bottom > 0.0, |this| {
+            this.child(
+                div()
+                    .id("mobile-safe-bottom")
+                    .w_full()
+                    .h(safe_bottom)
+                    .flex_shrink_0()
+                    .bg(ui_colors.surface),
+            )
+        })
+        .when_some(self.toast.as_deref(), |this, msg| {
+            this.child(render_toast_overlay(
+                msg,
+                &ui_colors,
+                true,
+                showing_thread,
+                safe,
+            ))
         })
         .into_any_element()
-    }
-
-    fn render_mobile_top_bar(&self, colors: &UiColors, cx: &Context<Self>) -> AnyElement {
-        let ui_colors = *colors;
-        let weak_search = cx.weak_entity();
-        let weak_theme = cx.weak_entity();
-
-        h_flex()
-            .w_full()
-            .h(px(46.))
-            .flex_shrink_0()
-            .px_3()
-            .gap_2()
-            .items_center()
-            .justify_between()
-            .bg(ui_colors.surface)
-            .border_b_1()
-            .border_color(ui_colors.border)
-            .child(
-                h_flex()
-                    .items_center()
-                    .gap_2()
-                    .child(render_brand_mark(&ui_colors, 22.0))
-                    .child(
-                        div()
-                            .text_size(rems(0.96))
-                            .font_weight(FontWeight::BOLD)
-                            .text_color(ui_colors.text)
-                            .child("XolHN"),
-                    ),
-            )
-            .child(
-                h_flex()
-                    .items_center()
-                    .gap_1()
-                    .child(
-                        Button::new("mobile-topbar-search")
-                            .ghost()
-                            .small()
-                            .icon(IconName::Search)
-                            .accessibility_label("Open search")
-                            .on_click(move |_, window, cx| {
-                                let _ = weak_search.update(cx, |app, cx| {
-                                    app.mobile_showing_thread = false;
-                                    app.mobile_tab = MobileTab::Search;
-                                    app.search_input.update(cx, |input, cx| {
-                                        input.focus(window, cx);
-                                    });
-                                    cx.notify();
-                                });
-                            }),
-                    )
-                    .child(
-                        Button::new("mobile-topbar-theme")
-                            .ghost()
-                            .small()
-                            .icon(IconName::Palette)
-                            .accessibility_label("Cycle theme")
-                            .on_click(move |_, window, cx| {
-                                let _ = weak_theme.update(cx, |app, cx| {
-                                    app.cycle_theme(window, cx);
-                                });
-                            }),
-                    ),
-            )
-            .into_any_element()
     }
 
     fn render_mobile_feed_pane(
@@ -2155,7 +2136,8 @@ impl XolhnApp {
             .flex_shrink_0()
             .overflow_x_scroll()
             .px_2p5()
-            .py_2()
+            .pt_1()
+            .pb_2()
             .gap_1p5()
             .items_center()
             .bg(ui_colors.surface)
@@ -2212,7 +2194,13 @@ impl XolhnApp {
             .into_any_element()
     }
 
-    fn render_mobile_bottom_nav(&self, colors: &UiColors, cx: &Context<Self>) -> AnyElement {
+    fn render_mobile_bottom_nav(
+        &self,
+        colors: &UiColors,
+        safe_left: Pixels,
+        safe_right: Pixels,
+        cx: &Context<Self>,
+    ) -> AnyElement {
         let ui_colors = *colors;
 
         let tabs = [
@@ -2226,6 +2214,8 @@ impl XolhnApp {
             .w_full()
             .h(px(54.))
             .flex_shrink_0()
+            .pl(safe_left)
+            .pr(safe_right)
             .bg(ui_colors.surface)
             .border_t_1()
             .border_color(ui_colors.border)
@@ -2701,6 +2691,7 @@ fn render_toast_overlay(
     colors: &UiColors,
     is_mobile: bool,
     mobile_showing_thread: bool,
+    safe_area: crate::SafeAreaInsets,
 ) -> AnyElement {
     let pill = div()
         .px_3()
@@ -2723,9 +2714,9 @@ fn render_toast_overlay(
         };
         h_flex()
             .absolute()
-            .left_3()
-            .right_3()
-            .bottom(bottom_offset)
+            .left(px(12.) + px(safe_area.left))
+            .right(px(12.) + px(safe_area.right))
+            .bottom(bottom_offset + px(safe_area.bottom))
             .justify_center()
             .child(pill)
             .into_any_element()

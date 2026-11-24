@@ -6,11 +6,19 @@ android {
     namespace = "dev.xolhn.app"
     compileSdk = 34
 
+    val workspaceVersion = rootProject.file("../Cargo.toml")
+        .takeIf { it.exists() }
+        ?.useLines { lines ->
+            lines.mapNotNull { line ->
+                Regex("""^\s*version\s*=\s*"([^"]+)"""").find(line)?.groupValues?.get(1)
+            }.firstOrNull()
+        }
     val appVersionName = providers.gradleProperty("xolhnVersion")
         .orNull
         ?.trim()
         ?.takeIf { it.isNotEmpty() }
-        ?: "1.0.0"
+        ?: workspaceVersion
+        ?: "1.0.1"
     val semverParts = appVersionName
         .substringBefore("-")
         .substringBefore("+")

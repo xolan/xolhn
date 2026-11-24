@@ -55,7 +55,7 @@ impl AlgoliaClient {
     pub fn with_base_url(base_url: impl Into<String>) -> Self {
         let config = ureq::Agent::config_builder()
             .timeout_global(Some(Duration::from_secs(15)))
-            .user_agent("XolHN/1.0.0")
+            .user_agent(concat!("XolHN/", env!("CARGO_PKG_VERSION")))
             .build();
 
         Self {
