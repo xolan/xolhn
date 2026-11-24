@@ -2,6 +2,12 @@
 
 An alternative cross-platform **Hacker News** reader client built in Rust for **Windows**, **Linux**, and **Android**.
 
+## Screenshots
+
+| Desktop (Linux / Windows) | Android |
+| :---: | :---: |
+| <img src="docs/screenshots/desktop.png" alt="XolHN Desktop" width="620" /> | <img src="docs/screenshots/android.png" alt="XolHN Android" width="220" /> |
+
 ## v1.0.0 Scope (MVP)
 
 The v1.0.0 release is intentionally **read-only** with **no user login**:

@@ -15,6 +15,70 @@ pub struct AppPaths {
 
 pub type ChromeCallback = Arc<dyn Fn(ThemePalette) + Send + Sync>;
 
+/// Logical-pixel safe area insets for screen edges obscured by system chrome or cutouts.
+#[derive(Debug, Clone, Copy, PartialEq, Default)]
+pub struct SafeAreaInsets {
+    pub top: f32,
+    pub bottom: f32,
+    pub left: f32,
+    pub right: f32,
+}
+
+impl SafeAreaInsets {
+    /// Converts physical-pixel edge insets into logical pixels using `scale_factor`.
+    pub fn from_physical_px(
+        top: i32,
+        bottom: i32,
+        left: i32,
+        right: i32,
+        scale_factor: f32,
+    ) -> Self {
+        let scale = if scale_factor.is_finite() && scale_factor > 0.0 {
+            scale_factor
+        } else {
+            1.0
+        };
+        Self {
+            top: (top.max(0) as f32) / scale,
+            bottom: (bottom.max(0) as f32) / scale,
+            left: (left.max(0) as f32) / scale,
+            right: (right.max(0) as f32) / scale,
+        }
+    }
+
+    /// Clamps non-finite or negative edge insets to `0.0`.
+    pub fn sanitized(self) -> Self {
+        let clamp = |value: f32| {
+            if value.is_finite() {
+                value.max(0.0)
+            } else {
+                0.0
+            }
+        };
+        Self {
+            top: clamp(self.top),
+            bottom: clamp(self.bottom),
+            left: clamp(self.left),
+            right: clamp(self.right),
+        }
+    }
+
+    /// Returns per-edge maximums after sanitizing both inset values.
+    pub fn max_edges(self, other: Self) -> Self {
+        let a = self.sanitized();
+        let b = other.sanitized();
+        Self {
+            top: a.top.max(b.top),
+            bottom: a.bottom.max(b.bottom),
+            left: a.left.max(b.left),
+            right: a.right.max(b.right),
+        }
+    }
+}
+
+/// Callback queried during rendering to retrieve platform safe-area insets for a scale factor.
+pub type SafeAreaProvider = Arc<dyn Fn(f32) -> SafeAreaInsets + Send + Sync>;
+
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub enum LoadState<T> {
     #[default]
@@ -784,5 +848,61 @@ mod tests {
         });
         let prepared = PreparedSearchHit::from_hit(comment_hit);
         assert_eq!(prepared.excerpt.as_deref(), Some("Hello & world"));
+    }
+
+    #[test]
+    fn safe_area_from_physical_px_converts_and_guards_scale_and_negatives() {
+        assert_eq!(
+            SafeAreaInsets::from_physical_px(96, 72, -12, 48, 3.0),
+            SafeAreaInsets {
+                top: 32.0,
+                bottom: 24.0,
+                left: 0.0,
+                right: 16.0,
+            }
+        );
+        assert_eq!(
+            SafeAreaInsets::from_physical_px(30, 15, 0, -5, 0.0),
+            SafeAreaInsets {
+                top: 30.0,
+                bottom: 15.0,
+                left: 0.0,
+                right: 0.0,
+            }
+        );
+        assert_eq!(
+            SafeAreaInsets::from_physical_px(18, 24, 6, 12, f32::NAN),
+            SafeAreaInsets {
+                top: 18.0,
+                bottom: 24.0,
+                left: 6.0,
+                right: 12.0,
+            }
+        );
+    }
+
+    #[test]
+    fn safe_area_max_edges_sanitizes_and_picks_maximums() {
+        let a = SafeAreaInsets {
+            top: -5.0,
+            bottom: 20.0,
+            left: f32::NAN,
+            right: 8.0,
+        };
+        let b = SafeAreaInsets {
+            top: 40.0,
+            bottom: f32::INFINITY,
+            left: 12.0,
+            right: 4.0,
+        };
+        assert_eq!(
+            a.max_edges(b),
+            SafeAreaInsets {
+                top: 40.0,
+                bottom: 20.0,
+                left: 12.0,
+                right: 8.0,
+            }
+        );
     }
 }

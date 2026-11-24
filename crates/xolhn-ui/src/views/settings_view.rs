@@ -85,12 +85,17 @@ pub fn render_settings_panel(
         callbacks.on_close.clone()
     };
 
-    let header = h_flex()
+    let mut header = h_flex()
         .id("settings-header")
         .w_full()
         .flex_shrink_0()
-        .px_4()
-        .py_3()
+        .px_4();
+    header = if is_mobile {
+        header.pt_1p5().pb_2p5()
+    } else {
+        header.py_3()
+    };
+    let header = header
         .justify_between()
         .items_center()
         .border_b_1()
@@ -998,7 +1003,11 @@ fn render_storage_and_reset_section(colors: &UiColors, callbacks: &SettingsCallb
                 .border_color(colors.border)
                 .text_xs()
                 .text_color(colors.subtle)
-                .child("XolHN v1.0.0 • Read-only Hacker News client (Algolia API)"),
+                .child(concat!(
+                    "XolHN v",
+                    env!("CARGO_PKG_VERSION"),
+                    " • Read-only Hacker News client (Algolia API)"
+                )),
         )
 }
 

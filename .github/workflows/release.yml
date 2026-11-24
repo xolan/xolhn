@@ -77,6 +77,7 @@ jobs:
           install_args: rust
       - uses: Swatinem/rust-cache@v2
       - name: Package desktop archive
+        shell: bash
         env:
           XOLHN_VERSION: ${{ needs.check.outputs.version }}
           TARGET: ${{ matrix.target }}
