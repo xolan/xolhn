@@ -18,7 +18,7 @@ android {
         ?.trim()
         ?.takeIf { it.isNotEmpty() }
         ?: workspaceVersion
-        ?: "1.0.2"
+        ?: "1.0.3"
     val semverParts = appVersionName
         .substringBefore("-")
         .substringBefore("+")
