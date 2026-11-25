@@ -2132,6 +2132,7 @@ impl XolhnApp {
 
         let mut chip_row = h_flex()
             .id("mobile-feed-chips")
+            .role(Role::TabList)
             .w_full()
             .flex_shrink_0()
             .overflow_x_scroll()
@@ -2156,6 +2157,15 @@ impl XolhnApp {
                     .items_center()
                     .justify_between()
                     .cursor_pointer()
+                    .when(is_active, |this| {
+                        this.text_color(ui_colors.text)
+                            .font_weight(FontWeight::SEMIBOLD)
+                    })
+                    .when(!is_active, |this| {
+                        this.text_color(ui_colors.muted)
+                            .font_weight(FontWeight::MEDIUM)
+                            .hover(move |s| s.text_color(ui_colors.text))
+                    })
                     .on_click(move |_, _window, cx| {
                         let _ = weak.update(cx, |app, cx| {
                             app.switch_feed(feed, cx);
@@ -2168,15 +2178,6 @@ impl XolhnApp {
                             .px_1()
                             .text_size(rems(0.80))
                             .whitespace_nowrap()
-                            .when(is_active, |this| {
-                                this.text_color(ui_colors.text)
-                                    .font_weight(FontWeight::SEMIBOLD)
-                            })
-                            .when(!is_active, |this| {
-                                this.text_color(ui_colors.muted)
-                                    .font_weight(FontWeight::MEDIUM)
-                                    .hover(move |s| s.text_color(ui_colors.text))
-                            })
                             .child(feed.short_label()),
                     )
                     .child(div().w(px(28.)).h(px(2.)).rounded_full().bg(if is_active {
