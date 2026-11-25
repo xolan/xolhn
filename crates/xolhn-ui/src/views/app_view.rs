@@ -2136,10 +2136,8 @@ impl XolhnApp {
             .flex_shrink_0()
             .overflow_x_scroll()
             .px_2p5()
-            .pt_1()
-            .pb_2()
-            .gap_1p5()
-            .items_center()
+            .gap(px(2.))
+            .items_stretch()
             .bg(ui_colors.surface)
             .border_b_1()
             .border_color(ui_colors.border);
@@ -2148,37 +2146,44 @@ impl XolhnApp {
             let is_active = self.active_feed == feed;
             let weak = cx.weak_entity();
             chip_row = chip_row.child(
-                div()
+                v_flex()
                     .id(SharedString::from(format!("mobile-chip-{}", feed.slug())))
-                    .role(Role::Button)
+                    .role(Role::Tab)
                     .aria_label(format!("Feed: {}", feed.label()))
                     .aria_selected(is_active)
-                    .flex_shrink_0()
-                    .px_3()
-                    .py_1()
-                    .rounded_full()
-                    .border_1()
+                    .flex_1()
+                    .min_w(px(44.))
+                    .items_center()
+                    .justify_between()
                     .cursor_pointer()
-                    .text_size(rems(0.78))
-                    .font_weight(FontWeight::SEMIBOLD)
-                    .whitespace_nowrap()
-                    .when(is_active, |this| {
-                        this.bg(ui_colors.accent)
-                            .border_color(ui_colors.accent)
-                            .text_color(ui_colors.accent_fg)
-                    })
-                    .when(!is_active, |this| {
-                        this.bg(ui_colors.bg)
-                            .border_color(ui_colors.border)
-                            .text_color(ui_colors.muted)
-                            .hover(move |s| s.bg(ui_colors.hover).text_color(ui_colors.text))
-                    })
                     .on_click(move |_, _window, cx| {
                         let _ = weak.update(cx, |app, cx| {
                             app.switch_feed(feed, cx);
                         });
                     })
-                    .child(feed.short_label()),
+                    .child(
+                        div()
+                            .pt(px(6.))
+                            .pb(px(7.))
+                            .px_1()
+                            .text_size(rems(0.80))
+                            .whitespace_nowrap()
+                            .when(is_active, |this| {
+                                this.text_color(ui_colors.text)
+                                    .font_weight(FontWeight::SEMIBOLD)
+                            })
+                            .when(!is_active, |this| {
+                                this.text_color(ui_colors.muted)
+                                    .font_weight(FontWeight::MEDIUM)
+                                    .hover(move |s| s.text_color(ui_colors.text))
+                            })
+                            .child(feed.short_label()),
+                    )
+                    .child(div().w(px(28.)).h(px(2.)).rounded_full().bg(if is_active {
+                        ui_colors.accent
+                    } else {
+                        transparent_black()
+                    })),
             );
         }
 
